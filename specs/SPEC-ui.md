@@ -483,7 +483,7 @@ MVP.md 14 acceptance criteria this module owns or enables:
 
 None for this module.
 
-Differences between the designs and MVP.md that belong to other modules (noted here so they aren't lost; each will be raised in that module's spec):
-- **portal:** the success screen and the design system's button examples show "Download receipt" and "Add something else", but MVP.md 5.6 says the receipt is emailed and there are no further actions. The checklist shows the QR phone handoff (MVP.md 15, open question 6) and a "Why did I get this?" link (open question 7).
-- **requests:** the dashboard design (hero count, review cards, count list) differs from the MVP.md 5.3 tabbed layout.
-- **settings:** the Workspace design puts "Delete files after" and "Default reminders" on the Workspace tab, while MVP.md 5.3 has a separate Defaults tab. The retention options differ: 30/60/90/180 days in the PNG, 30/90/180 in the design system.
+Differences between the designs and MVP.md that belonged to other modules, all decided on Oct 20, 2026 (MVP.md 0 rows 37 to 45):
+- **portal:** "Download receipt" and "Add something else" are not built (MVP.md 5.6 wins). The QR phone handoff and the "Why did I get this?" link are must-haves.
+- **requests:** the dashboard follows the design (hero count, review cards, count list as tabs). Templates are grouped by category, each with a Lucide icon (SPEC-requests).
+- **settings:** "Delete files after" and "Default reminders" stay on the Workspace tab, as designed. Retention is 30 days, 90 days or a custom 1 to 365 days, which neither design shows; the Custom option adds a number field.

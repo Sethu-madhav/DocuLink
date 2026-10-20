@@ -1,12 +1,12 @@
 # MVP Specification: Client Document Collection Portal
 
-Version 1.1, October 2026. Status: ready to build.
+Version 1.2, October 2026. Status: ready to build.
 
 A requester sends a client one secure link. The client opens a mobile-friendly checklist, uploads files or photographs paperwork, and submits. The requester reviews item by item, asks for fixes where needed, and downloads a cleanly named ZIP.
 
-**Launch market: US accountants and tax preparers.** Mortgage brokers, lawyers and property managers use the same product, but templates, landing page, onboarding copy and compliance positioning target tax preparers first. Build starts the week of October 26, 2026; the closed beta runs in December and public launch is before January 5, 2027, ahead of the US tax season (January to April). Missing that window costs a year of the strongest buying moment.
+**Launch market: US tax preparers, accountants, HR teams, lawyers and universities.** Starter templates come in groups for tax files, accounting, HR and universities, plus the requester's own custom templates. The tax-season dates below still set the schedule, and the compliance mapping on the security page targets tax preparers and accountants (section 10). Build starts the week of October 26, 2026; the closed beta runs in December and public launch is before January 5, 2027, ahead of the US tax season (January to April). Missing that window costs a year of the strongest buying moment.
 
-This document is the build spec for the first paid version. It revises the original plan (section 0), fixes inconsistencies, cuts scope to what a solo developer can ship in about seven weeks, and adds the UI and UX layer the original plan left out. Version 1.1 adds the infrastructure, security and go-to-market changes in rows 23 to 35 of section 0.
+This document is the build spec for the first paid version. It revises the original plan (section 0), fixes inconsistencies, cuts scope to what a solo developer can ship in about seven weeks, and adds the UI and UX layer the original plan left out. Version 1.1 adds the infrastructure, security and go-to-market changes in rows 23 to 35 of section 0. Version 1.2 adds the decisions made while writing the module specs (`specs/`), in rows 37 to 45.
 
 ---
 
@@ -35,7 +35,7 @@ The original plan is solid in shape. The changes below fix things that would hav
 | 17 | Requester auth | Not specified | Better Auth with Drizzle adapter: email magic link plus Google sign-in | Fits the stack, no extra vendor |
 | 18 | Data lifecycle | Links lock after approval; files kept forever | Add **Revoke link**, **Delete files**, and a retention policy (default 90 days after completion) | Sensitive financial and identity documents shouldn't live forever by default |
 | 19 | Billing gate | "Gate active requests behind a subscription" | Gate only creating and sending requests. Clients can always finish an open request. 14-day free trial | A lapsed card should never block the requester's client mid-upload |
-| 20 | Trust in emails | Generic sender | Emails show the requester's business name ("Acme Accounting via [App Name]") with reply-to set to the requester. Portal shows their name and logo | An unknown sender asking for a driver's license looks exactly like phishing |
+| 20 | Trust in emails | Generic sender | Emails show the requester's business name ("Acme Accounting via DocuLink") with reply-to set to the requester. Portal shows their name and logo | An unknown sender asking for a driver's license looks exactly like phishing |
 | 21 | Reminder timing | One daily cron in UTC | Hourly scheduler; reminders go out between 9 and 11 am in the requester's time zone; maximum 5 per request; idempotent claim so QStash retries never double-send | A 3 am reminder is ignored; retries are normal in QStash |
 | 22 | Missing basics | none | Checklist templates, "Duplicate request", submission receipt email to the client, "Extend deadline" | Requesters send the same checklist over and over |
 | 23 | Requester MFA | Email magic link and Google only | TOTP two-factor (Better Auth `twoFactor` plugin) with backup codes, required before a requester can preview or download any file. Passkeys later | The FTC Safeguards Rule requires MFA for anyone accessing customer information, and tax preparers are covered by it. Firms ask about it in every security review |
@@ -52,6 +52,15 @@ The original plan is solid in shape. The changes below fix things that would hav
 | 34 | Market | Mixed US and UK conventions ("driver's licence" next to W-2 and 1099) | US first: US spelling, US tax templates, US time zones as defaults | Market choice drives data residency, retention rules and copy |
 | 35 | Compliance positioning | "Not certified" only | Public security page mapping our controls to the FTC Safeguards Rule and IRS Publication 4557, plus each vendor's SOC 2 report kept on file for customer questionnaires. Still no certification claims | Accountants need to show their own Safeguards Rule program covers the vendors they use |
 | 36 | Design tokens | Colors sampled from the PNG mockups; 180 ms stamp animation | Tokens, type stacks, layout, motion and the 400 ms seal taken from `Designs/DocuLink Design System v2.html`, which is now the visual source of truth (5.2, 5.4, 5.9). Two deliberate exceptions: dates use US formats, and the "Clients" nav item is post-MVP (1.3). The cat mark gets a vector version | The sampled colors drifted from the source, and the sampled input border (1.4:1) failed WCAG 1.4.11; the design system's control border passes at 3.4:1 |
+| 37 | Audience | US tax preparers first; mortgage, lending and rental templates | Tax preparers, accountants, HR teams, lawyers and universities. Starter templates are grouped as Tax files, Accounting, HR and Universities, plus Custom for the requester's own, each group with its own icon (5.3, 7 `templates.category`) | Product decision (Oct 20, 2026): the same collection loop serves all five audiences, and the groups make the right starting point easy to find |
+| 38 | Name, domain and sender | Placeholders ("[App Name]" and "[DocuLink]") | DocuLink at `doculinkapp.com`. Email is sent from `requests@mail.doculinkapp.com` | The SES identity, DNS and Terraform need the final domain in week 1. `requests@` reads less like a marketing sender than `notify@` |
+| 39 | Reopening a completed request | `completed` was final | **Reopen** on the completed view lets the requester un-approve items and draft notes. Sending them moves the request `completed → changes_requested` with one email, like any change request (3.1, 4.4) | The design has Reopen, and approving the last item by mistake otherwise had no undo. Reusing the change-request flow adds no new client screen |
+| 40 | Retention | 30, 90 or 365 days; automatic deletion a should-have | 30 days, 90 days (default) or a custom number of days from 1 to 365. Automatic deletion is a must-have; only the 7-day warning email stays a should-have. A changed setting applies to requests already completed, after a warning that says how many will be deleted (4.7) | The landing page, the client screens and the security page all promise automatic deletion, so it must be true at launch |
+| 41 | Phone handoff | Open question (15 Q6) | Must-have: on desktop, the portal shows "Paper copy? Use your phone" with a QR code of the same link, generated in the browser (5.6) | Clients often open the email on a laptop while the paperwork needs photographing |
+| 42 | Sign-in and two-factor | The magic link signs in when opened; Google sign-in and two-factor unspecified | The sign-in link opens a "Confirm sign-in" page with one button. Google's own 2-Step Verification does not count as our two-factor (10) | Corporate email scanners open links and would use up the sign-in link. We can't verify Google's second factor, and the FTC Safeguards Rule expects us to enforce MFA ourselves |
+| 43 | Reminder opt-out | None | Reminder emails carry a one-click `List-Unsubscribe` header and a "Stop reminders for this request" link. It stops scheduled and manual reminders for that request only, and the requester sees it (5.7, 7, 9.3) | Gmail and Yahoo sender rules favor it, and a client who wants fewer emails shouldn't have to mark them as spam |
+| 44 | Data model additions | None | `document_requests.number` (shown as "No. 0142"); `workspaces.next_request_number`, `onboarded_at`, `past_due_since` and `deleting_at`; `checklist_items.reason` (the "Why:" line); `templates.category`; `reminder_schedules.stopped_by_recipient_at`, with `next_send_at` nullable for drafts; `zip_exports.file_set_hash` (7) | Each one backs a screen in the designs or a rule in a module spec |
+| 45 | Smaller corrections from the module specs | Various | `proxy.ts` (Node.js) replaces Edge middleware; the IAM role gains the version, tagging and multipart permissions that deletion needs; a quarantine key prefix; an audit-log trigger bypass used only by account deletion and Delete draft; PDFs previewed with pdf.js (scripting off) instead of an iframe; logos PNG, JPEG or WEBP only; client thumbnails only for clean files; Delete draft removes the draft; submitting needs at least one file; `unapproveItem` and `removeBlockedFile`; the dashboard follows its design; Settings tabs are Workspace, Security, Billing and Account, with Templates in the top nav; beta pricing is a promotion code | Found while writing the module specs; each is described where it lands below |
 
 ---
 
@@ -65,11 +74,12 @@ Requester:
 - Workspace profile: business name, logo, time zone, reply-to email.
 - Create, edit, send, duplicate, revoke and delete requests.
 - Checklist builder: label, helper instructions, required or optional, reorder.
-- Save a checklist as a template; start a request from a template.
+- Save a checklist as a template; start a request from a starter template (grouped as Tax files, Accounting, HR and Universities) or a custom one.
 - Dashboard grouped by what needs attention.
 - Request detail: progress, per-item files, activity timeline.
 - Inline preview (PDF and images) and single-file download.
 - Approve items; request changes with a note; send all change requests in one email.
+- Reopen a completed request by sending new change requests.
 - Download ZIP with standardized names (direct stream up to 200 MB, prepared in the background above that).
 - Reminder settings per request (off, every 2, 3, 5 or 7 days).
 - Regenerate link, extend deadline, delete files.
@@ -85,19 +95,22 @@ Recipient:
 - Submit gate once required items are filled.
 - Clear rejected-item state with the requester's note; resubmit.
 - Locked, completed, expired and revoked states.
+- On desktop, a QR code that opens the same link on a phone.
+- Stop reminders for a request from the reminder email.
 
 System:
 - Direct-to-S3 uploads with server-side verification and SHA-256 checksums.
 - Malware scan of every upload (GuardDuty Malware Protection for S3); nothing is previewable or downloadable until clean.
 - Debounced upload digest to the requester; immediate email on submit.
 - Email delivery, bounce and complaint tracking (SES events).
-- Reminder scheduler, expiry, orphan cleanup, retention deletion.
+- Reminder scheduler, expiry, orphan cleanup, automatic retention deletion (every S3 version).
 - Audit log of every meaningful event.
 - Rate limiting, Turnstile, private KMS-encrypted bucket, signed URLs only.
 - Public security page ("How we protect client documents") mapped to the FTC Safeguards Rule and IRS Publication 4557.
+- Public pages: landing, pricing, a sample request anyone can try (`/sample`), "How is my data protected?", "Why did I get this?" and the legal pages.
 
 ### 1.2 Should have (first 4 weeks after launch)
-- Automatic retention deletion with a 7-day warning email (manual delete is a must).
+- A 7-day retention warning email (automatic deletion and manual delete are must-haves).
 - Magic-byte file type check (read the first bytes from S3 during confirmation).
 - Combine multiple photos into one PDF in the browser.
 - CSV manifest inside the ZIP.
@@ -118,7 +131,7 @@ System:
 
 | User | Job to be done | What success feels like |
 |------|---------------|--------------------------|
-| Requester (at launch: a US accountant or tax preparer) | "Get every document I need from this client, in a usable state, without chasing." | Opens the dashboard, sees one request marked "Needs review", approves it in two minutes, downloads a tidy ZIP |
+| Requester (at launch: a US tax preparer, accountant, HR team, lawyer or university office) | "Get every document I need from this client, in a usable state, without chasing." | Opens the dashboard, sees one request marked "Needs review", approves it in two minutes, downloads a tidy ZIP |
 | Recipient | "Send my accountant what they asked for without fuss, from my phone." | Taps the email link, photographs three documents, taps Submit, gets a receipt. No account, no app |
 
 Design for the recipient first. They have no loyalty to the product, are often on a phone with a poor connection, and are handing over sensitive documents to a link they received by email. Every drop-off on their side becomes a chase email for the requester.
@@ -138,15 +151,17 @@ stateDiagram-v2
   submitted --> changes_requested: Requester sends change requests
   changes_requested --> submitted: Client resubmits
   submitted --> completed: All provided items approved
+  completed --> changes_requested: Requester reopens and sends change requests
   pending --> expired: Expiry date passes
   in_progress --> expired: Expiry date passes
   changes_requested --> expired: Expiry date passes
   expired --> in_progress: Requester extends deadline
-  draft --> cancelled: Delete draft
+  expired --> pending: Requester extends deadline (no files yet)
   pending --> cancelled: Revoke link
   in_progress --> cancelled: Revoke link
   changes_requested --> cancelled: Revoke link
   submitted --> cancelled: Revoke link
+  expired --> cancelled: Revoke link
 ```
 
 | Status | Dashboard label | Client can upload? | Reminders? |
@@ -164,6 +179,9 @@ Notes:
 - `expired` extended with no files uploaded returns to `pending` rather than `in_progress`.
 - Expiry default: due date + 14 days. With no due date: 60 days after sending.
 - `completed` requires every item that has files to be approved. Optional items with no files are shown as "Not provided" and don't block completion.
+- Completion happens on the approve that makes every provided item approved (event `ALL_APPROVED`).
+- **Reopen** (completed, files not yet deleted): the requester un-approves items and drafts notes. **Send change requests** then moves the request to `changes_requested`, clears `completed_at`, extends `expires_at` to at least 14 days from now, resumes reminders and logs `request_reopened`.
+- **Delete draft** removes the draft and its items. A draft never reaches `cancelled`.
 
 ### 3.2 Checklist item status
 
@@ -190,7 +208,7 @@ A rejection is saved as a draft on the requester's side (`rejection_note` set, `
    - Generates 32 random bytes, encodes as base64url (the token).
    - Stores `sha256(token)` in `token_hash` and the AES-256-GCM encryption of the token in `token_ciphertext`.
    - Sets status `pending`, `sent_at`, `expires_at`, creates the reminder schedule.
-   - Sends the invite email ("Acme Accounting via [App Name]", reply-to the requester) through the SES configuration set, storing the SES message ID so delivery and bounce events can be matched back to the request.
+   - Sends the invite email ("Acme Accounting via DocuLink", reply-to the requester) through the SES configuration set, storing the SES message ID so delivery and bounce events can be matched back to the request.
    - Logs `request_sent`.
 
 ### 4.2 Client intake
@@ -208,7 +226,7 @@ A rejection is saved as a draft on the requester's side (`rejection_note` set, `
 9. The client can leave at any time. Opening the same link on another device shows the same state.
 
 ### 4.3 Submit
-1. **Submit documents** becomes active when every required item has at least one active file.
+1. **Submit documents** becomes active when every required item has at least one active file, at least one file has been added overall, and no upload is still in progress.
 2. A confirmation sheet lists what will be sent and any optional items left empty.
 3. On confirm: status `submitted`, `submitted_at` set, reminders paused, pending digest cancelled (cursor advanced), immediate email to the requester ("John Doe submitted 4 documents for 2026 Tax Return"), receipt email to the client. Logs `request_submitted`.
 4. The portal shows the success screen and becomes read-only.
@@ -218,6 +236,7 @@ A rejection is saved as a draft on the requester's side (`rejection_note` set, `
 2. Per item: **Approve** or **Request changes** (opens a note field with quick-pick reasons: "Blurry or unreadable", "Pages missing", "Wrong document", "Expired document", "Other").
 3. The review bar shows "3 approved, 1 change to send". Clicking **Send change requests** runs one transaction: items to `rejected`, `rejection_sent_at` set, request to `changes_requested`, events logged, reminders resumed. One email to the client lists every item and note.
 4. If everything is approved, the request moves to `completed` automatically and the client link becomes a read-only summary.
+5. **Reopen** on a completed request (until its files are deleted): the requester un-approves the items that need another look and drafts notes, then sends them as in step 3. The request moves to `changes_requested` and the client gets one email.
 
 ### 4.5 Client fixes
 1. Client opens the link (from the email, which deep-links to `/c/{token}#item-{id}`). Rejected items are shown first with the requester's note.
@@ -233,7 +252,7 @@ A rejection is saved as a draft on the requester's side (`rejection_note` set, `
 ### 4.7 Close out
 - **Revoke link**: status `cancelled`, token invalidated, client sees "This request has been closed."
 - **Delete files**: deletes every object in S3 for the request, marks files `removed`, keeps metadata and audit log. Irreversible, requires typing the client's name.
-- Retention: completed requests have their files deleted automatically after the requester's retention setting (30, 90 or 365 days; default 90).
+- Retention: completed requests have their files deleted automatically (every S3 version) after the workspace's retention setting: 30 days, 90 days (default) or a custom number of days from 1 to 365. Changing the setting applies to requests already completed; the save dialog first says how many requests' files the next nightly run will delete.
 
 ### 4.8 Bounced invite
 1. SES reports a hard bounce or complaint for an invite, reminder or change-request email (section 8.4).
@@ -260,16 +279,16 @@ The full design system (principles, brand, color, type, layout, icons, component
 
 ### 5.3 Requester screens
 
-**Sign in.** Email field, "Email me a sign-in link", "Continue with Google". After sending: "Check your inbox for a link from [App Name]. It expires in 15 minutes." When two-factor is on, a second step asks for the 6-digit code from the authenticator app, with "Use a backup code" below. "Trust this device for 30 days" is offered and off by default.
+**Sign in.** Email field, "Email me a sign-in link", "Continue with Google". After sending: "Check your inbox for a link from DocuLink. It expires in 15 minutes." The emailed link opens a "Confirm sign-in" page with one **Sign in** button, so email security scanners that open links can't use it up. When two-factor is on, a second step asks for the 6-digit code from the authenticator app, with "Use a backup code" below. "Trust this device for 30 days" is offered and off by default.
 
 **Two-factor setup.** Forced on first sign-in, right after onboarding step 1: "Client documents need a second lock. Scan this code with an authenticator app." QR code, manual key, code field, then 10 backup codes to download or copy. Until set up, the requester can create and send requests but cannot preview or download files.
 
 **Onboarding (3 steps, skippable after step 1).**
 1. Business name and time zone (required).
 2. Logo upload and reply-to email.
-3. Create your first request from a starter template (Tax return, Mortgage application, Rental application, New client onboarding).
+3. Create your first request from a starter template, picked by group (Tax files, Accounting, HR, Universities), or start from scratch.
 
-**Dashboard.** Tabs grouped by who has the next move, not by raw status:
+**Dashboard.** Grouped by who has the next move, not by raw status. The layout follows the design `2 Requester dashboard - 01 Requests.png`: a headline ("3 to review." and the next due request), cards for requests that need review, a "Waiting on client" table, and counts that act as the tabs. The wireframe below shows the behavior, not the layout:
 
 ```
 +----------------------------------------------------------------------+
@@ -291,6 +310,7 @@ The full design system (principles, brand, color, type, layout, icons, component
 
 - "Needs review" is the default tab when it has items.
 - "Waiting on client" includes Sent, In progress, Changes requested, Expired.
+- "Completed" includes revoked requests, shown with the "Revoked" badge.
 - Rows show last meaningful activity ("Opened 3h ago", "Uploaded 2 files 20m ago"), and "Due tomorrow" or "Overdue" in the attention color.
 - A bounced invite shows "Invite bounced" in place of the activity text, in the attention color, and sorts to the top of "Waiting on client".
 - Row menu: Open, Copy link, Send reminder now, Fix email (only when bounced), Duplicate, Revoke.
@@ -328,7 +348,7 @@ The full design system (principles, brand, color, type, layout, icons, component
 - `::` is a drag handle; items can also be reordered with keyboard (up/down buttons appear on focus).
 - Enter in the last item label adds a new item.
 - Validation inline, on blur: email format, at least one item, title required.
-- **Send request** confirmation dialog: "Send to john@example.com? They'll get an email from Acme Accounting via [App Name]." Buttons: **Send request**, Cancel. Toast afterwards: "Request sent to John Doe."
+- **Send request** confirmation dialog: "Send to john@example.com? They'll get an email from Acme Accounting via DocuLink." Buttons: **Send request**, Cancel. Toast afterwards: "Request sent to John Doe."
 
 **Request detail and review.** The page where requesters spend most of their time.
 
@@ -362,14 +382,19 @@ The full design system (principles, brand, color, type, layout, icons, component
 - Approve lands the "Approved" seal on the item card.
 - **Request changes** expands an inline panel under the item: quick-pick reason chips plus a text field ("Tell John what to fix"). Saving shows the item as "Change drafted" with an Undo.
 - The sticky review bar counts drafted changes. **Send change requests (2)** opens a preview of the email the client will receive, then sends.
-- When everything is approved: banner "All items approved. Request completed." with **Download ZIP** as the primary button.
+- When everything is approved: the completed view (design `3 Document review - 02 Complete.png`) with the "Complete" seal, **Download ZIP** as the primary button, **Reopen**, and the retention line "Files will be deleted on Jan 15, 2027."
 - Before submission, the page shows uploads as they arrive (read-only, no approve buttons) with a note: "You can review once John submits."
 - Header menu: Send reminder now, Extend deadline, Fix email and resend, Regenerate link, Revoke link, Delete files.
+- Activity sits in a collapsible "History" section below the item list.
+- **Reopen** puts a completed request back into review: items can be un-approved and notes drafted, then sent with **Send change requests** (3.1).
+- If the client stopped reminders, the header says "{Client} turned off reminders" and Send reminder now is unavailable.
 - Bounced invite: a banner under the header, "The invite to john@exampel.com bounced. Check the address and resend." with **Fix email**, which opens an inline field and **Resend invite**.
 - File states in the item list and preview: "Scanning..." (spinner, no preview), clean (normal), "Blocked: failed the security scan" (no preview or download; actions: Remove, Request changes).
 - Large requests: **Download ZIP** becomes **Prepare ZIP**, then "Preparing your ZIP..." with progress, then **Download ZIP** (link valid for 24 hours).
 
-**Settings.** Workspace (business name, logo, time zone, reply-to; matches the `5 Settings - 01 Workspace` design), Defaults (reminder frequency, expiry, file retention), Templates (list, edit, delete), Security (two-factor, backup codes, trusted devices, active sessions), Billing (plan, monthly or annual, "Manage billing" opens Stripe portal), Account (sign-in methods, delete account). The Team tab from the designs is hidden until the Team plan ships.
+**Templates** (top nav). Starter templates grouped as Tax files, Accounting, HR and Universities, then the requester's own under Custom. Each group has its own icon (Lucide `Receipt`, `Calculator`, `Users`, `GraduationCap`, `PencilRuler`), always next to its text label. Editing a starter saves a copy in the workspace. A template saved from a request goes under Custom unless the requester picks another group.
+
+**Settings.** Workspace (business name, logo, time zone, reply-to, default reminders and file retention; matches the `5 Settings - 01 Workspace` design), Security (two-factor, backup codes, trusted devices, active sessions), Billing (plan, monthly or annual, "Manage billing" opens Stripe portal), Account (sign-in methods, delete account). The Team tab from the designs is hidden until the Team plan ships.
 
 **Billing states.**
 - Trial: quiet banner "Trial ends in 5 days. Add billing to keep sending requests."
@@ -477,6 +502,8 @@ John_Doe - 2026 Tax Return.zip
 - Progress counts required and optional separately if optional items exist: "1 of 2 required added".
 - A short trust line near the bottom plus a "How is my data protected?" link to a plain-language page.
 - No sign-up prompts, no marketing, no chat widgets.
+- On desktop, a "Paper copy? Use your phone" panel shows a QR code of the same link, generated in the browser, so the client can photograph documents with their phone. Hidden on phones and touch devices.
+- Footer links: "How is my data protected?" and "Why did I get this?".
 
 **Add file sheet.** Tapping **Add file** opens a bottom sheet:
 
@@ -504,7 +531,7 @@ John_Doe - 2026 Tax Return.zip
 |-------|---------|
 | Preparing | "Preparing photo..." (during HEIC conversion or resize) |
 | Uploading | File name, progress bar with percent, Cancel |
-| Done | Green check, file name, size, thumbnail, Remove |
+| Done | Green check, file name, size, preview, Remove. The preview is the copy on the client's device; on a later visit a server thumbnail appears only once the file has passed the malware scan |
 | Failed | Red text "Upload didn't finish. Check your connection.", **Retry** and Remove |
 | Too large or wrong type | "This file is 41 MB. The limit is 25 MB." (upload never starts) |
 
@@ -526,7 +553,7 @@ Uploads for one item run in parallel (max 3 at a time). Leaving the page mid-upl
 
 ### 5.7 Emails
 
-All emails: plain, single column, requester branding on client emails, one primary button, and the full link as text below the button (some corporate mail clients strip buttons).
+All emails: plain, single column, requester branding on client emails, one primary button, and the full link as text below the button (some corporate mail clients strip buttons). Client emails come from `"Acme Accounting via DocuLink" <requests@mail.doculinkapp.com>` with reply-to set to the requester; requester emails come from `"DocuLink" <requests@mail.doculinkapp.com>`.
 
 | Email | To | Subject | Primary button |
 |-------|----|---------|----------------|
@@ -539,12 +566,14 @@ All emails: plain, single column, requester branding on client emails, one prima
 | Resubmitted | Requester | John Doe updated 1 document | Review now |
 | Expiring soon (should-have) | Requester | 3 requests expire this week | Open dashboard |
 | Retention warning (should-have) | Requester | Files for 2 completed requests will be deleted on Oct 1 | Review requests |
-| Sign-in link | Requester | Your sign-in link for [App Name] | Sign in |
+| Sign-in link | Requester | Your sign-in link for DocuLink | Sign in |
 | Invite bounced | Requester | Your request to john@exampel.com bounced | Fix email |
 | ZIP ready | Requester | Your ZIP for 2026 Tax Return is ready | Download ZIP |
 | Two-factor changed | Requester | Two-factor sign-in was turned off / backup codes were used | Review security |
 
 Client emails never contain file names that could reveal content in a lock-screen preview beyond the requester's own item labels, and never attach files.
+
+Reminder emails carry one-click unsubscribe headers (`List-Unsubscribe` with an HTTPS link, and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`) and a footer link, "Stop reminders for this request". It stops scheduled and manual reminders for that request only; change requests still arrive. The requester sees "{Client} turned off reminders" on the request.
 
 ### 5.8 Loading, empty and error patterns
 - Skeleton rows for the dashboard and item list; never a full-page spinner.
@@ -573,7 +602,7 @@ Client emails never contain file names that could reveal content in a lock-scree
 [ Vercel Pro (iad1): Next.js App Router, Node.js ]  \
    - Server Components + Server Actions (requester)  --> [ AWS S3, us-east-1 ]
    - Route Handlers (portal API, ZIP, jobs, webhooks)     private, SSE-KMS
-   - Middleware (Edge): auth redirect, security headers        |
+   - proxy.ts (Node.js): auth redirect, security headers       |
    - AWS access via OIDC -> IAM role (no static keys)          | object created
           |                                                     v
           |                                      [ GuardDuty Malware Protection ]
@@ -592,7 +621,7 @@ Client emails never contain file names that could reveal content in a lock-scree
 [ Sentry ] errors    [ PostHog ] product analytics (masked)
 ```
 
-AWS resources (bucket, KMS key, IAM role, SES identity and configuration set, GuardDuty protection plan, EventBridge rules) are defined in one small infrastructure-as-code stack (Terraform, SST or CDK) and deployed to separate production and staging AWS accounts.
+AWS resources (bucket, KMS key, IAM role, SES identity and configuration set, GuardDuty protection plan, EventBridge rules) are defined in one small infrastructure-as-code stack (Terraform) and deployed to separate production and staging AWS accounts.
 
 | Piece | Choice | Notes |
 |-------|--------|-------|
@@ -618,6 +647,7 @@ AWS resources (bucket, KMS key, IAM role, SES identity and configuration set, Gu
 requests/{requestId}/{itemId}/{fileId}
 exports/{requestId}/{exportId}.zip      // background ZIPs, lifecycle-deleted after 24 hours
 logos/{workspaceId}/{logoId}
+quarantine/{requestId}/{fileId}         // infected files, lifecycle-deleted after 30 days, not scanned
 ```
 No client names or original file names in keys. Original name is stored in the database only. GuardDuty scanning is limited to the `requests/` prefix.
 
@@ -626,16 +656,17 @@ No client names or original file names in keys. Original name is stored in the d
 DATABASE_URL                 # pooled connection string
 BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 AWS_REGION, AWS_ROLE_ARN, S3_BUCKET    # credentials come from Vercel OIDC, no access keys
-SES_FROM_EMAIL, SES_CONFIGURATION_SET
+SES_FROM_EMAIL, SES_CONFIGURATION_SET   # requests@mail.doculinkapp.com
 AWS_EVENTS_SECRET            # shared secret sent by the EventBridge API destination
 UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 QSTASH_TOKEN, QSTASH_CURRENT_SIGNING_KEY, QSTASH_NEXT_SIGNING_KEY
 STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_MONTHLY, STRIPE_PRICE_ID_ANNUAL
 TOKEN_ENCRYPTION_KEY         # 32 bytes, base64; used for token_ciphertext
 PORTAL_SESSION_SECRET        # signs the portal cookie
+EMAIL_LINK_SECRET            # signs reminder unsubscribe links
 TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY
 SENTRY_DSN, NEXT_PUBLIC_POSTHOG_KEY
-APP_URL
+APP_URL                      # https://doculinkapp.com
 ```
 Production and staging use separate values for everything, including separate AWS accounts, Neon projects, Stripe accounts (test mode for staging) and Upstash databases.
 
@@ -644,7 +675,7 @@ Production and staging use separate values for everything, including separate AW
 The app stays on Vercel and the database on Neon for the MVP. Documents, the sensitive part, already live in our own AWS account, and Neon runs on AWS in the same region. Moving the app and database onto AWS (ECS or App Runner, RDS, VPC, CI/CD, preview environments) would cost 2 to 4 weeks of a 7-week plan and buy customers nothing visible. Vercel, Neon, Upstash, Stripe, Sentry and PostHog all publish SOC 2 Type II reports, which is what customer security questionnaires ask for.
 
 Stay portable so a move is cheap if it's ever needed:
-- Node.js runtime for all app logic; Edge only for middleware.
+- Node.js runtime for all app logic, including `proxy.ts`.
 - Standard Postgres through Drizzle; no Neon-only features in application code.
 - No Vercel-only storage (Blob, KV, Edge Config) for application data.
 - Background jobs are plain HTTP routes, so they can move to Lambda unchanged.
@@ -672,6 +703,7 @@ scan_status:    'pending' | 'clean' | 'infected' | 'failed'
 export_status:  'queued' | 'building' | 'ready' | 'failed' | 'expired'
 member_role:    'owner' | 'member'
 actor:          'requester' | 'recipient' | 'system'
+template_category: 'tax' | 'accounting' | 'hr' | 'university' | 'custom'
 
 workspaces
   id                   uuid pk
@@ -680,13 +712,17 @@ workspaces
   time_zone            text not null default 'America/New_York'
   reply_to_email       text null
   default_reminder_days int null default 3   // null = off
-  retention_days       int not null default 90
+  retention_days       int not null default 90   // 1–365; settings offers 30, 90 or custom
   stripe_customer_id   text unique null
   subscription_status  text not null default 'trialing'  // trialing|active|past_due|canceled
   plan                 text not null default 'solo'      // solo|team
   billing_interval     text null                         // month|year
   trial_ends_at        timestamptz null
   current_period_end   timestamptz null
+  past_due_since       timestamptz null         // start of the 7-day grace period
+  next_request_number  int not null default 1   // assigns document_requests.number
+  onboarded_at         timestamptz null
+  deleting_at          timestamptz null         // account deletion in progress
   created_at, updated_at
 
 workspace_members
@@ -698,12 +734,16 @@ workspace_members
 
 templates
   id uuid pk, workspace_id -> workspaces.id, created_by -> user.id, name text,
-  items jsonb   // [{label, instructions, required}]
+  category template_category not null default 'custom'
+  items jsonb   // [{label, instructions, reason, required}]
+  unique (workspace_id, lower(name))
+  // starter templates live in code, not in this table
   created_at, updated_at
 
 document_requests
   id                   uuid pk
   workspace_id         uuid -> workspaces.id, indexed
+  number               int not null         // per workspace, shown as "No. 0142"
   created_by           text -> user.id
   title                text not null
   recipient_name       text not null
@@ -720,6 +760,7 @@ document_requests
   last_digest_event_id bigint not null default 0
   created_at, updated_at
   index (workspace_id, status, updated_at desc)
+  unique (workspace_id, number)
 
 email_messages                                // maps SES events back to requests
   ses_message_id       text pk
@@ -735,6 +776,7 @@ checklist_items
   position             int not null
   label                text not null
   instructions         text null
+  reason               text null            // the "Why:" line
   required             boolean not null default true
   status               item_status not null default 'pending'
   rejection_note       text null
@@ -769,6 +811,7 @@ zip_exports                                   // background ZIPs over 200 MB
   size_bytes           bigint null
   file_count           int null
   error                text null
+  file_set_hash        text not null        // reuse a ready export until the files change
   created_at, ready_at, expires_at
 
 activity_events                               // append-only
@@ -785,16 +828,17 @@ activity_events                               // append-only
 reminder_schedules
   request_id           uuid pk -> document_requests.id on delete cascade
   interval_days        int not null
-  next_send_at         timestamptz not null
+  next_send_at         timestamptz null     // null while the request is a draft
   sent_count           int not null default 0
   max_count            int not null default 5
   is_active            boolean not null default true
+  stopped_by_recipient_at timestamptz null  // the client used the unsubscribe link
   index (next_send_at) where is_active
 ```
 
-Event types: `request_created`, `request_sent`, `link_opened`, `file_uploaded`, `file_removed`, `request_submitted`, `item_approved`, `item_change_drafted`, `change_requests_sent`, `request_resubmitted`, `request_completed`, `reminder_sent`, `link_regenerated`, `deadline_extended`, `request_revoked`, `zip_downloaded`, `zip_prepared`, `file_previewed`, `files_deleted`, `request_expired`, `file_scan_clean`, `file_scan_infected`, `email_bounced`, `email_complained`, `invite_resent`.
+Event types: `request_created`, `request_sent`, `link_opened`, `file_uploaded`, `file_removed`, `request_submitted`, `item_approved`, `item_change_drafted`, `change_requests_sent`, `request_resubmitted`, `request_completed`, `reminder_sent`, `link_regenerated`, `deadline_extended`, `request_revoked`, `zip_downloaded`, `zip_prepared`, `file_previewed`, `files_deleted`, `request_expired`, `file_scan_clean`, `file_scan_infected`, `email_bounced`, `email_complained`, `invite_resent`, `request_reopened`, `reminders_stopped`.
 
-Append-only enforcement: application code has no update or delete paths for `activity_events`; a Postgres trigger rejecting `UPDATE` and `DELETE` on the table is added in the first migration (cascade deletes from the parent are allowed by deleting the request, which only happens on account deletion).
+Append-only enforcement: application code has no update or delete paths for `activity_events`; a Postgres trigger rejecting `UPDATE` and `DELETE` on the table is added in the first migration The trigger allows `DELETE` only when the transaction has run `SET LOCAL app.allow_event_delete = 'on'`, which only account deletion and Delete draft do. Without the bypass, cascaded deletes would fail too.
 
 ---
 
@@ -852,15 +896,16 @@ for each:
 ```
 - `next_local_morning` picks a random minute between 9:00 and 11:00 in the requester's time zone.
 - Reminders pause on `submitted` and resume on `changes_requested` (with `next_send_at` reset to one interval from the change request).
+- A request whose client stopped reminders (`stopped_by_recipient_at` set) gets none, scheduled or manual, and resuming never reactivates it.
 - Final reminder copy mentions the due date if set. When `sent_count` reaches `max_count`, `is_active` becomes false and the requester sees "Reminders finished" on the request.
 
 ### 8.3 Maintenance (daily, 03:00 UTC)
 1. Expire: set `expired` where `expires_at < now` and status in (pending, in_progress, changes_requested); log `request_expired`.
 2. Orphans: delete S3 objects and rows for `uploaded_files` with status `pending` older than 2 hours.
 3. Removed files: delete S3 objects for files with status `removed` whose object still exists.
-4. Retention (should-have automation): for completed requests where `completed_at + retention_days < now` and `files_deleted_at is null`, delete S3 objects, set `files_deleted_at`, log `files_deleted`.
+4. Retention: for completed requests where `completed_at + retention_days < now` and `files_deleted_at is null`, delete S3 objects (every version), set `files_deleted_at`, log `files_deleted`. Requests with a drafted change note (being reopened) are skipped.
 5. Stuck scans: files with `scan_status = pending` for more than 30 minutes are re-checked by reading the GuardDuty tag on the object (`GuardDutyMalwareScanStatus`); still missing after 2 hours raises a Sentry alert.
-6. Exports: mark `zip_exports` past `expires_at` as `expired` (the S3 lifecycle rule removes the objects).
+6. Exports: mark `zip_exports` past `expires_at` as `expired` (the S3 lifecycle rule removes the objects). Exports stuck in `queued` or `building` for over an hour are marked `failed`.
 
 ### 8.4 AWS events (`POST /api/webhooks/aws`)
 
@@ -875,7 +920,7 @@ if THREATS_FOUND:
     log file_scan_infected; Sentry warning (no file content)
     if request not yet submitted: status = removed; item back to pending if it has no other active files
     else: file stays listed as "Blocked" for the requester, who can request changes
-if UNSUPPORTED / ACCESS_DENIED / FAILED: scan_status = failed; treat as blocked; alert
+if UNSUPPORTED / ACCESS_DENIED / FAILED: scan_status = failed; treat as blocked; object stays in place (not quarantined) for a manual check; alert
 ```
 
 SES event (`aws.ses`: Delivery, Bounce, Complaint):
@@ -906,15 +951,16 @@ Throughput from S3 within `us-east-1` is high enough to fit 500 MB (the per-requ
 ### 9.1 Requester (authenticated; Server Actions unless noted)
 | Action | Notes |
 |--------|-------|
-| `createRequest`, `updateRequest`, `duplicateRequest`, `deleteDraft` | Drafts editable freely; sent requests allow editing title, due date, message and adding items |
+| `createRequest`, `updateRequest`, `duplicateRequest`, `deleteDraft` | Drafts editable freely; sent requests allow editing title, due date, message and adding items. `deleteDraft` removes the draft entirely |
 | `sendRequest` | Subscription check, token generation, email |
-| `sendReminderNow` | Rate limited to once per 12 hours per request |
+| `sendReminderNow` | Rate limited to once per 12 hours per request; doesn't count toward the 5 scheduled reminders; unavailable after the client stopped reminders |
 | `regenerateLink` | New token; old link shows "invalid"; optional re-send of invite |
 | `fixRecipientEmail` | Updates `recipient_email`, regenerates the token, clears `invite_bounced_at`, resumes reminders, resends the invite, logs `invite_resent` |
 | `extendDeadline` | New `expires_at`; restores status per 3.1 |
 | `revokeRequest` | Status `cancelled`, token fields cleared |
-| `approveItem`, `draftChangeRequest`, `undoChangeRequest` | Drafts only; no email |
-| `sendChangeRequests` | One `db.transaction()`; one email |
+| `approveItem`, `unapproveItem`, `draftChangeRequest`, `undoChangeRequest` | No email. On a completed request (Reopen), un-approve and draft are allowed until its files are deleted |
+| `removeBlockedFile` | Removes an infected or failed file |
+| `sendChangeRequests` | One `db.transaction()`; one email. From `completed` it reopens the request (3.1) |
 | `deleteFiles` | Requires typed confirmation |
 | `saveTemplate`, `updateTemplate`, `deleteTemplate` | |
 | `GET /api/files/{fileId}/url?mode=inline\|download` | Requires a two-factor-verified session and `scan_status = clean`. Presigned GET, 10 min; logs `file_previewed` |
@@ -928,12 +974,12 @@ Every requester action checks that the session user is a member of the request's
 | Route | Purpose |
 |-------|---------|
 | `GET /c/{token}` | Render portal (server component) |
-| `POST /api/portal/session` | Verify Turnstile, set signed cookie `{requestId, exp}` |
+| `POST /api/portal/session` | Verify Turnstile, set signed cookie `__Secure-dlp_{rid8}` = `{requestId, token-hash prefix, exp}`. One cookie per request; regenerating the link ends existing sessions |
 | `POST /api/portal/opened` | Beacon, logs `link_opened` (throttled) |
 | `POST /api/portal/uploads/presign` | Validate, create pending file row, return PUT URL |
 | `POST /api/portal/uploads/confirm` | HEAD check, activate file, update item and request, debounce |
 | `DELETE /api/portal/files/{fileId}` | Only while the item is editable |
-| `GET /api/portal/files/{fileId}/thumb` | Presigned GET for the client's own uploads while editable |
+| `GET /api/portal/files/{fileId}/thumb` | Presigned GET for the client's own uploads while editable, and only once the file is clean |
 | `POST /api/portal/submit` | Submit or resubmit |
 
 Portal API requests authenticate with the portal cookie only (never a token in the query string). The cookie is `HttpOnly`, `Secure`, `SameSite=Lax`, path `/api/portal`.
@@ -947,6 +993,7 @@ Portal API requests authenticate with the portal cookie only (never a token in t
 | `POST /api/jobs/zip` | QStash, on **Prepare ZIP** |
 | `POST /api/webhooks/aws` | EventBridge API destination; shared secret verified; GuardDuty scan results and SES delivery, bounce and complaint events |
 | `POST /api/webhooks/stripe` | Stripe; signature verified; events: `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.payment_failed` |
+| `GET`, `POST /api/email/unsubscribe?t=` | Reminder emails. `t` is an HMAC-signed request id that can only stop reminders. `GET` shows a confirm page; `POST` (one-click, RFC 8058) stops reminders and logs `reminders_stopped` |
 
 ---
 
@@ -956,13 +1003,13 @@ Portal API requests authenticate with the portal cookie only (never a token in t
 
 **Portal hardening.** `Referrer-Policy: no-referrer`, `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, strict CSP (self, Turnstile, PostHog, S3 origin for `connect-src` and `img-src`). No third-party scripts beyond those.
 
-**Requester accounts.** Two-factor (TOTP) is mandatory before any file can be previewed or downloaded; backup codes are shown once and stored hashed. Turning two-factor off or using a backup code sends a security email. Sessions expire after 7 days of inactivity; "Sign out everywhere" in Security settings.
+**Requester accounts.** Two-factor (TOTP) is mandatory before any file can be previewed or downloaded; backup codes are shown once and stored hashed. Turning two-factor off or using a backup code sends a security email. Sessions expire after 7 days of inactivity; "Sign out everywhere" in Security settings. Sign-in links open a "Confirm sign-in" page and sign in only from its button. Google's own 2-Step Verification doesn't count as our two-factor. Lost two-factor and backup codes go through support-assisted recovery with identity checks, from a written runbook.
 
-**AWS access.** No long-lived AWS keys exist. Vercel exchanges its OIDC token for short-lived credentials of one IAM role per environment. The role can only `PutObject`, `GetObject`, `DeleteObject`, `CopyObject` and `ListBucket` on the app bucket, use the app KMS key, and send from the SES identity. CloudTrail is on in both accounts; production and staging are separate AWS accounts.
+**AWS access.** No long-lived AWS keys exist. Vercel exchanges its OIDC token for short-lived credentials of one IAM role per environment. The role can only `PutObject`, `GetObject`, `GetObjectVersion`, `GetObjectTagging`, `DeleteObject`, `DeleteObjectVersion`, `CopyObject`, `AbortMultipartUpload`, `ListBucket` and `ListBucketVersions` on the app bucket, use the app KMS key, and send from the SES identity. CloudTrail is on in both accounts; production and staging are separate AWS accounts.
 
-**Storage.** Private bucket, Block Public Access on, bucket policy denying any request without TLS, SSE-KMS with a customer-managed key, versioning with non-current versions expiring after 7 days. No public URLs. PUT URLs 15 minutes with signed `Content-Type`, `Content-Length` and `x-amz-checksum-sha256`; GET URLs 10 minutes and only for files with `scan_status = clean`. Downloads of anything other than PDF and images use `Content-Disposition: attachment`. Previews render PDFs in a sandboxed iframe.
+**Storage.** Private bucket, Block Public Access on, bucket policy denying any request without TLS, SSE-KMS with a customer-managed key, versioning with non-current versions expiring after 7 days. No public URLs. PUT URLs 15 minutes with signed `Content-Type`, `Content-Length` and `x-amz-checksum-sha256`; GET URLs 10 minutes and only for files with `scan_status = clean`. Downloads of anything other than PDF and images use `Content-Disposition: attachment`. Previews render PDFs with pdf.js, with scripting and `eval` off, so PDF JavaScript never runs. Workspace logos are PNG, JPEG or WEBP only (no SVG).
 
-**Validation.** Allow-list of MIME types, 25 MB per file, 10 files per item, 100 files and 500 MB per request. S3 verifies the SHA-256 checksum on upload; the server confirms size, type and checksum via HEAD; magic-byte check is a should-have.
+**Validation.** Allow-list of MIME types, 25 MB per file, 10 files per item, 100 files and 500 MB per request, 50 GB per workspace (checked at presign). S3 verifies the SHA-256 checksum on upload; the server confirms size, type and checksum via HEAD; magic-byte check is a should-have.
 
 **Malware.** Every upload is scanned by GuardDuty Malware Protection for S3 before it can be previewed, downloaded or zipped. Infected files are moved to a quarantine prefix (30-day lifecycle) and never served.
 
@@ -984,9 +1031,9 @@ Portal API requests authenticate with the portal cookie only (never a token in t
 
 **Honest positioning.** The MVP is not HIPAA- or SOC 2-certified. Marketing copy must not claim "bank-level security" or compliance certifications.
 
-**Compliance support for tax preparers.** Tax preparers must keep a written information security program under the FTC Safeguards Rule and IRS Publication 4557, and that program has to cover vendors like us. We publish a security page that describes each control in plain language and maps it to those requirements: MFA, encryption in transit and at rest, access control, malware scanning, audit log, retention and deletion, incident response contact. Each vendor's SOC 2 Type II report (Vercel, Neon, AWS, Upstash, Stripe, Sentry, PostHog) is collected and kept on file to answer customer security questionnaires. Customers get a data processing addendum and a sub-processor list. SOC 2 for us is a post-launch decision once firms start asking for it.
+**Compliance support for tax preparers.** Tax preparers must keep a written information security program under the FTC Safeguards Rule and IRS Publication 4557, and that program has to cover vendors like us. We publish a security page that describes each control in plain language and maps it to those requirements: MFA, encryption in transit and at rest, access control, malware scanning, audit log, retention and deletion, incident response contact. Each vendor's SOC 2 Type II report (Vercel, Neon, AWS, Upstash, Stripe, Sentry, PostHog) is collected and kept on file to answer customer security questionnaires. Customers get a data processing addendum and a sub-processor list. SOC 2 for us is a post-launch decision once firms start asking for it. The same page serves HR teams, law firms and universities as plain descriptions of the controls; we make no claims about rules specific to them (for example FERPA, HIPAA or bar association guidance).
 
-**Account deletion.** Deletes all S3 objects, then cascades database rows, then the Stripe customer.
+**Account deletion.** A background job: revokes all sessions first, then deletes all S3 objects (every version), then the database rows (with the audit-log bypass), then the Stripe customer, then sends a confirmation email.
 
 ---
 
@@ -996,11 +1043,11 @@ Portal API requests authenticate with the portal cookie only (never a token in t
 |------|----------|
 | Plan at launch | **Solo**: $29/month or $290/year (two months free), one user, unlimited requests (fair-use cap: 500 MB per request, 50 GB total storage) |
 | Planned after launch | **Team**: proposed $79/month for 3 users plus $19 per extra user, shared templates and dashboard, roles. Pricing to validate with beta firms before building |
-| Beta users | Closed-beta firms keep the Solo price for their first 12 months |
+| Beta users | Closed-beta firms keep the Solo price for their first 12 months, through a Stripe promotion code entered at Checkout |
 | Tax | Stripe Tax on Checkout and subscriptions; register in states once thresholds are reached |
-| Trial | 14 days, no card required |
+| Trial | 14 days, no card required. Subscribing during the trial sets Stripe's `trial_end` to the app's trial end, so the first charge comes when the trial ends |
 | Gate | Creating new requests and sending requests. Reviewing, downloading and client access are never gated |
-| Failed payment | `past_due` keeps full access for 7 days with a banner; then behaves as lapsed |
+| Failed payment | `past_due` keeps full access for 7 days (from `past_due_since`) with a banner; then behaves as lapsed |
 | Cancel | Access until period end; data retained under the normal retention policy |
 
 Webhook handler updates `subscription_status`, `plan`, `billing_interval`, `current_period_end`, `trial_ends_at` on the workspace and is idempotent (store processed Stripe event IDs in Redis for 7 days).
@@ -1035,19 +1082,19 @@ MVP targets for the first 60 days:
 Estimates assume one full-time developer, starting October 26, 2026. The version 1.1 additions add roughly 3 to 4 days in total. If the schedule slips, cut in this order: background ZIP (stream everything directly up to the 500 MB cap instead), then the annual price. Never cut two-factor, malware scanning or bounce handling.
 
 **Milestone 1: Foundation (week 1, Oct 26 to Nov 1)**
-- AWS: production and staging accounts; infrastructure-as-code stack for the S3 bucket (SSE-KMS, Block Public Access, TLS-only policy, versioning, lifecycle rules, CORS), KMS key, IAM role with Vercel OIDC trust, SES identity and configuration set, GuardDuty Malware Protection plan, EventBridge rules and API destination, CloudTrail.
-- **Request SES production access on day 1** (approval can take a few days) and set up SPF, DKIM, DMARC on the `mail.` subdomain.
+- AWS: production and staging accounts; Terraform stack for the S3 bucket (SSE-KMS, Block Public Access, TLS-only policy, versioning, lifecycle rules, CORS), KMS key, IAM role with Vercel OIDC trust, SES identity and configuration set, GuardDuty Malware Protection plan, EventBridge rules and API destination, CloudTrail.
+- **Request SES production access on day 1** (approval can take a few days) and set up SPF, DKIM, DMARC on `mail.doculinkapp.com`. Developers use a sandbox role in the staging account for local S3 and SES.
 - Provision Neon (`aws-us-east-1`, PITR on), Upstash Redis and QStash, Sentry, PostHog, Vercel Pro project pinned to `iad1`, Stripe with Tax enabled.
 - Next.js app, Tailwind, design tokens (5.4), base components (button, input, badge, sheet, toast).
 - Drizzle schema and first migration, including workspaces and the append-only trigger.
 - Better Auth: magic link, Google and two-factor. Onboarding step 1 and forced two-factor setup.
 
 **Milestone 2: Requests and portal uploads (weeks 2 to 3, Nov 2 to 15)**
-- Request builder with live preview, US tax templates first, drafts, send flow, token generation and invite email (with SES message ID recorded).
+- Request builder with live preview, grouped starter templates (Tax files, Accounting, HR, Universities), drafts, send flow, token generation and invite email (with SES message ID recorded).
 - Dashboard with tabs, search and empty states.
 - Portal: token validation, Turnstile session, checklist, Add file sheet, camera capture, HEIC conversion and resize, SHA-256 checksum, presign, direct upload with progress and retry, confirm with HEAD check, remove file.
 - AWS events webhook: GuardDuty scan results and SES delivery, bounce and complaint events; "Invite bounced" flag and Fix email flow.
-- Submit gate, confirmation sheet, success screen, submitted and receipt emails.
+- Submit gate, confirmation sheet, success screen, submitted and receipt emails, desktop QR handoff.
 - Activity log writes throughout.
 
 **Milestone 3: Review loop and notifications (week 4, Nov 16 to 22)**
@@ -1058,7 +1105,7 @@ Estimates assume one full-time developer, starting October 26, 2026. The version
 
 **Milestone 4: Export and billing (week 5, Nov 23 to 29)**
 - Direct streaming ZIP up to 200 MB and background ZIP export above it, with naming convention; test with 500 MB of files.
-- Delete files (all S3 versions); retention setting.
+- Delete files (all S3 versions); retention setting and automatic retention deletion.
 - Stripe Checkout (monthly and annual), Stripe Tax, portal, webhooks, trial banner, lapsed gating.
 - Settings pages including Security (two-factor, sessions).
 
@@ -1069,7 +1116,7 @@ Estimates assume one full-time developer, starting October 26, 2026. The version
 - Device testing matrix: iOS Safari (latest and previous), Android Chrome, Samsung Internet, desktop Chrome, Safari, Firefox, Edge. Outlook and Gmail rendering for every email.
 - Accessibility pass (keyboard-only run of both apps, VoiceOver and TalkBack on the portal).
 - Load test: 20 parallel uploads on one request; ZIP of 100 files.
-- Privacy page ("How is my data protected?"), terms, privacy policy.
+- Privacy page ("How is my data protected?"), "Why did I get this?", terms, privacy policy (owner and date for the legal text still open, 15 Q8).
 - Closed beta with 5 to 10 tax preparers from mid-December, then public launch before January 5, 2027.
 
 ---
@@ -1083,7 +1130,8 @@ Estimates assume one full-time developer, starting October 26, 2026. The version
 - [ ] Rejecting 3 items sends exactly one email to the client, listing all 3 notes.
 - [ ] Approved items cannot be changed by the client while other items are being fixed.
 - [ ] Reminders arrive between 9 and 11 am in the requester's time zone, stop on submit, stop after 5, and are never duplicated when QStash retries.
-- [ ] Reminder emails contain a working link.
+- [ ] Reminder emails contain a working link, and their one-click unsubscribe stops reminders for that request only.
+- [ ] Files of a completed request are deleted, every S3 version, at the first nightly run after its retention period ends.
 - [ ] A revoked or expired link shows the correct screen and cannot presign uploads.
 - [ ] A ZIP of 100 files totaling 500 MB is prepared in the background and downloads with correct names and order; a 150 MB ZIP streams directly; both jobs stay under 100 MB memory.
 - [ ] No S3 object is reachable without a signed URL; signed URLs expire as specified.
@@ -1109,7 +1157,7 @@ Estimates assume one full-time developer, starting October 26, 2026. The version
 | Emails land in spam, especially invites from a new domain | Domain authentication in week 1; warm up with beta users; plain-text alternative part; no link shorteners; requester reply-to; bounce and complaint tracking from day one |
 | Clients think the invite is phishing | Requester name and logo in sender name and portal; personal message field; requester can copy the link and send it themselves |
 | Forwarded or leaked links expose documents | Links are write-mostly: clients can see only their own thumbnails while editing, never after submission; revoke and regenerate available. Optional email one-time code on open is a post-MVP setting |
-| Malware in uploaded files | GuardDuty Malware Protection scans every upload; nothing is served until clean; allow-listed types; PDFs previewed in a sandboxed iframe; downloads as attachments |
+| Malware in uploaded files | GuardDuty Malware Protection scans every upload; nothing is served until clean; allow-listed types; PDFs previewed with pdf.js, scripting off; downloads as attachments |
 | Scan delays block the requester | Scans usually finish in seconds; "Scanning..." state in the UI; stuck-scan check in daily maintenance plus a Sentry alert |
 | ZIP timeouts on very large packages | Background export above 200 MB, store mode, 500 MB request cap, `maxDuration = 300`; fall back to per-item downloads if a ZIP fails; move the job to Lambda if needed |
 | iOS camera and HEIC quirks | Test matrix in milestone 5; conversion failure falls back to uploading the original HEIC (preview shows "Download to view") |
@@ -1119,8 +1167,9 @@ Estimates assume one full-time developer, starting October 26, 2026. The version
 Open questions to settle before milestone 2:
 1. Should requesters be able to approve items before the client submits (for long-running requests like mortgages)? Current answer: no, to keep locking simple. Revisit after beta.
 2. Is 10 files per item enough for multi-month bank statements? Consider 25 for PDF-heavy templates.
-3. Default retention of 90 days: does it suit accountants, who may prefer to keep files until they've moved them into their own system? Consider "Delete after download plus 30 days".
-4. Product name and domain (placeholder: [DocuLink]).
+3. Resolved Oct 20, 2026: retention is 30 days, 90 days (default) or a custom 1 to 365 days (row 40).
+4. Resolved Oct 20, 2026: DocuLink, at `doculinkapp.com` (row 38).
 5. Team plan price and seat model: validate $79 for 3 users with beta firms before building it.
-6. The checklist design (`1 Client portal - 01 Checklist.png`) shows a "Paper copy? Use your phone" QR handoff from desktop to phone, which this spec does not cover yet. Decide whether it is a must-have (it suits tax clients who open the email on a laptop) or a should-have.
-7. The designs include a "Why did I get this?" footer link on the portal. Write that page alongside "How is my data protected?".
+6. Resolved Oct 20, 2026: the QR phone handoff is a must-have (row 41).
+7. Resolved Oct 20, 2026: "Why did I get this?" ships at launch alongside "How is my data protected?".
+8. Who drafts the terms, privacy policy and DPA, and by when? Decided later, but they must be ready before the mid-December beta.
