@@ -136,7 +136,7 @@ Pages are server components with no client JavaScript, except the pricing toggle
 
 - **Component:** sections render; the pricing toggle; the sample portal never calls `fetch` (spy).
 - **Content tests:**
-  - forbidden phrases ("bank-level", "military-grade", "SOC 2 certified", "HIPAA compliant", "FERPA compliant") are absent from the rendered HTML of every page
+  - forbidden phrases ("bank-level", "military-grade", "SOC 2 certified", "HIPAA compliant", "FERPA compliant", "SOC 2 compliant", "SOC 2 ready") are absent from the rendered HTML of every page
   - the security page includes the "not certified" statement
 - **E2E:** every page returns 200 with axe checks clean; robots and sitemap; portal footer links resolve; the sample flow (add a file, submit, success) works offline (network blocked except static assets).
 - **Lighthouse CI** budgets: 95+ in all four categories, LCP under 2.0 s on mobile simulation.

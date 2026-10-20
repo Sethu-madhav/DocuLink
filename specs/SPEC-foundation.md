@@ -1,7 +1,7 @@
 # Spec: Foundation and server conventions
 
 Module id: `foundation`
-Status: Approved
+Status: Approved (revision 2: SOC 2 readiness controls, 2026-10-20)
 Implements: MVP.md 6, 6.1, 6.2, 6.3, 7, 8 (job conventions), 10, 13 M1
 Designs: none
 Reading doc: [docs/specs/foundation.md](../docs/specs/foundation.md)
@@ -89,7 +89,10 @@ drizzle/                          → Generated SQL migrations (committed)
 infra/modules/, infra/envs/{staging,production}/ → Terraform
 e2e/                              → Playwright specs
 tests/                            → Test helpers: db reset, factories, fakes (redis, qstash, clock)
-.github/workflows/                → ci.yml, migrate.yml
+.github/workflows/                → ci.yml, migrate.yml, codeql.yml
+.github/CODEOWNERS, .github/dependabot.yml
+docs/compliance/                  → control list, access reviews, onboarding and offboarding checklists
+docs/ops/                         → incident response, secret rotation, restore drills, access log rules
 ```
 
 Module layout (every feature module follows this):
@@ -325,6 +328,28 @@ Provisioning checklist (not Terraform, recorded in `infra/README.md`):
 - **Others:** a Sentry project, a PostHog project, a Turnstile site.
 - **Vercel Pro project:** region `iad1`, Fluid compute on, OIDC on (team issuer).
 
+## SOC 2 readiness controls (MVP.md 10)
+
+These run from the first commit, so their evidence exists whenever an audit starts. They're written for a team, not one person. Where evidence is a document, it lives in `docs/compliance/` (the control list and where each control's evidence is) and `docs/ops/` (runbooks).
+
+| Control | How | Evidence |
+|---|---|---|
+| Change management | GitHub organization. `main` is protected: pull request required; 1 approval from a code owner who isn't the author; stale approvals dismissed on new commits; required checks `ci`, `codeql`, `gitleaks`, `terraform`; no force pushes or deletion; rules apply to admins. Production deploys only from the Release workflow | PR history, branch protection settings export (quarterly) |
+| Emergency changes | An admin may bypass review only for a production incident. The PR is labeled `emergency` and gets a review within 2 business days | PRs with the label, each with a later approving review |
+| Vulnerability management | Dependabot security updates on, weekly grouped version updates; `pnpm audit --audit-level high` in `ci`; CodeQL (JavaScript/TypeScript) on every PR and weekly; `gitleaks`; `checkov` and `tflint` on `infra/`. Fix critical findings within 7 days and high within 30 | Dependabot and CodeQL alert history, with close dates |
+| Application logs | Vercel log drain to the log store (Open Question 1), kept for 1 year. Logs are JSON with a request id and follow the same scrubbing rules as Sentry: no document contents, file names, tokens or client emails | Log store retention setting; a sample query |
+| Infrastructure logs | CloudTrail (management and S3 data events) in a separate locked bucket, kept 1 year, with Object Lock | Terraform; bucket lifecycle |
+| Monitoring and alerting | Sentry issue alerts and Cron monitors (existing); Sentry Uptime monitors on `/api/health`, `/sign-in` and an invalid portal link, every minute; AWS alarms (existing). Alerts go to the on-call channel | Alert rules; incident log |
+| Staff access to AWS | IAM Identity Center with MFA required. Permission sets: `ReadOnly` (both accounts), `Developer` (staging only), `ProductionAdmin` (production, 1-hour sessions). No IAM users; `pnpm infra:check-users` fails if any exist | Identity Center assignments; CloudTrail sign-ins |
+| Staff access to vendors | GitHub, Vercel, Neon, Upstash, Stripe, Sentry, PostHog, Cloudflare and the email host: named company accounts, MFA enforced at the organization level, SSO where the plan allows, roles by need. No shared logins | Quarterly access review |
+| Production data | No admin panel or staff path to customer files in the app. Production database reads use a Neon read-only role, only for an incident or a customer's support request, each recorded as a GitHub issue labeled `prod-access` (who, when, why, what was read). Production data is never copied to staging, previews or laptops; those use seeds and factories | `prod-access` issues; Neon audit of role use |
+| Secrets | Runtime secrets only in Vercel environment variables, separate per environment. Staff credentials in the company password manager. `docs/ops/secret-rotation.md` covers every secret, including the `TOKEN_ENCRYPTION_KEY` re-encryption | Rotation records |
+| Incident response | `docs/ops/incident-response.md`: severity levels, roles, the first-hour checklist, customer notification without undue delay (so customers can meet their own deadlines, such as the FTC Safeguards Rule's 30 days for 500 or more consumers), and a post-incident review | Incident log; reviews |
+| Backup and recovery | Neon point-in-time restore; S3 versioning. A restore drill on staging before launch and every 6 months | Drill records in `docs/ops/` |
+| Access reviews | Quarterly: list every person's access in each system above, remove what isn't needed, sign off | `docs/compliance/access-reviews/{yyyy-qn}.md` |
+
+People controls (background checks, agreements, training, managed laptops, offboarding within one business day) are company processes in MVP.md 10, not code. This module only provides the checklists in `docs/compliance/`.
+
 ## Data
 
 Foundation owns the schema files and migrations for every MVP.md 7 table and enum. Feature modules own the behavior on their tables (listed in their specs) and request schema changes through their specs.
@@ -416,6 +441,7 @@ MVP.md 14 acceptance criteria owned here:
   - changing CI, Terraform, IAM permissions or the CSP
   - changing a rate-limit policy
   - adding a new external service
+  - changing branch protection or required checks
 - **Never:**
   - AWS access keys in any environment
   - `drizzle-kit push` against staging or production
@@ -423,6 +449,9 @@ MVP.md 14 acceptance criteria owned here:
   - disabling the append-only trigger outside account deletion
   - wildcard IAM actions or resources
   - running `infra:apply` against production from a laptop
+  - merging to `main` without review, except a labeled emergency change
+  - copying production data out of production, or reading it without a `prod-access` record
+  - shared logins or IAM users
 
 ## Success Criteria
 
@@ -435,6 +464,10 @@ MVP.md 14 acceptance criteria owned here:
 - [ ] Security headers and the CSP are present on staging (E2E), with no CSP violations reported on sign-in and portal pages.
 - [ ] Sentry receives a test error from the server and the browser with scrubbed fields. PostHog receives a typed test event.
 - [ ] SES production access has been requested (day 1), and SPF, DKIM and DMARC records verify.
+- [ ] Branch protection, CODEOWNERS, Dependabot and CodeQL are on, and a test PR without approval can't merge.
+- [ ] Production logs arrive in the log store with 1-year retention. Sentry Uptime monitors are green.
+- [ ] Staff reach AWS only through IAM Identity Center with MFA, and `infra:check-users` passes in both accounts.
+- [ ] `docs/compliance/` and `docs/ops/` hold the control list, the incident response runbook and the access review template.
 
 ## MVP.md changes (applied in v1.2, MVP.md 0 rows 38 and 45)
 
@@ -443,9 +476,17 @@ MVP.md 14 acceptance criteria owned here:
 3. **MVP.md 7, append-only trigger.** Deletes are allowed only when the transaction sets `app.allow_event_delete` (account deletion and Delete draft). A Postgres trigger also fires on cascaded deletes, so without a bypass both would fail.
 4. **MVP.md 6.** Next.js 16 renames middleware to `proxy.ts`, and it runs on Node.js.
 5. **MVP.md 6, 6.2, 13.** Terraform for the AWS stack; the domain `doculinkapp.com`; `EMAIL_LINK_SECRET`.
+6. **MVP.md 10, 13, 14 (row 46).** SOC 2 readiness controls from day one.
 
 ## Decisions (Oct 20, 2026)
 
 1. **Infrastructure as code:** Terraform.
 2. **Domain:** `doculinkapp.com`, with email from `mail.doculinkapp.com`.
 3. **Local AWS:** developers use a sandbox role in the staging account (AWS SSO) for S3 and SES. No LocalStack.
+4. **SOC 2:** build the controls from day one, for a team; the audit comes later (MVP.md 0 row 46).
+
+## Open Questions
+
+1. **Log store.** Application logs need a store that keeps them for a year, which is a new vendor or new AWS work. Options:
+   - (a) Axiom through Vercel's log drain integration: about an hour to set up, and it has its own SOC 2 report. Recommended.
+   - (b) Our own AWS account (a drain endpoint writing to S3, queried with Athena): no new vendor, about 2 days of Terraform and code.

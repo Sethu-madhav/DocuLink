@@ -37,6 +37,7 @@ This follows the MVP.md 13 milestones: foundation, ui, email (sign-in link only)
 - **Bounced invite.** `email` detects the bounce and emits it; `requests` sets `invite_bounced_at`, pauses reminders and owns Fix email.
 - **Emails.** `email` owns the layout and every template; the module that triggers an email calls `email`'s send function.
 - **Analytics.** `foundation` provides the PostHog wrapper with masking; each module emits its own MVP.md 12 events.
+- **SOC 2 readiness** (MVP.md 10) is not a module. `foundation` owns the engineering controls (branch protection, scanners, logs, staff access, runbooks); people controls are company processes.
 - **Security hardening** (rate limits, CSP, scrubbing, device and accessibility passes in 13 M5) is not a module. Each module's spec carries its share; `foundation` provides the helpers.
 
 ## Not in any module (deliberately)

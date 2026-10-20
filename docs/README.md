@@ -8,7 +8,7 @@ In build order.
 
 | Module | Title | Status | Read | Full spec |
 |---|---|---|---|---|
-| `foundation` | Foundation and server conventions | Approved | [docs/specs/foundation.md](specs/foundation.md) | [SPEC-foundation.md](../specs/SPEC-foundation.md) |
+| `foundation` | Foundation, server conventions and SOC 2 readiness controls | Approved | [docs/specs/foundation.md](specs/foundation.md) | [SPEC-foundation.md](../specs/SPEC-foundation.md) |
 | `ui` | UI design system | Approved | [docs/specs/ui.md](specs/ui.md) | [SPEC-ui.md](../specs/SPEC-ui.md) |
 | `email` | Email sending, templates and delivery events | Approved | [docs/specs/email.md](specs/email.md) | [SPEC-email.md](../specs/SPEC-email.md) |
 | `auth` | Authentication, two-factor and workspaces | Approved | [docs/specs/auth.md](specs/auth.md) | [SPEC-auth.md](../specs/SPEC-auth.md) |
