@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 16 380 380" role="img" aria-labelledby="title">
+  <title id="title">DocuLink</title>
+  <!-- Vector redraw of the pencil cat head in DocuLink Design System v2. Keep these colors; don't recolor, outline, rotate or stretch. -->
+  <g stroke="#3E5942" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <!-- ears -->
+    <path d="M62 150 C58 105 66 66 82 40 C108 52 136 74 156 100 Z" fill="#BFE2C2"/>
+    <path d="M216 98 C238 70 262 50 288 36 C302 64 310 100 306 146 Z" fill="#BFE2C2"/>
+    <path d="M82 128 C80 104 84 82 92 64 C108 74 122 88 132 102 Z" fill="#F1D2D5" stroke="none"/>
+    <path d="M236 102 C250 86 264 74 280 64 C288 84 290 106 288 128 Z" fill="#F1D2D5" stroke="none"/>
+    <!-- head -->
+    <ellipse cx="185" cy="236" rx="150" ry="134" fill="#BFE2C2"/>
+  </g>
+  <!-- muzzle and cheeks -->
+  <ellipse cx="182" cy="322" rx="72" ry="42" fill="#ECF6EA"/>
+  <ellipse cx="84" cy="298" rx="24" ry="14" fill="#E9AFB6" opacity=".75"/>
+  <ellipse cx="278" cy="298" rx="24" ry="14" fill="#E9AFB6" opacity=".75"/>
+  <!-- forehead stripes -->
+  <g stroke="#6E8F73" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M166 120 C168 132 170 142 170 152"/>
+    <path d="M184 116 C184 130 184 142 183 154"/>
+    <path d="M202 120 C199 132 197 142 196 152"/>
+  </g>
+  <!-- eyes -->
+  <circle cx="120" cy="248" r="32" fill="#24402C"/>
+  <circle cx="242" cy="248" r="32" fill="#24402C"/>
+  <circle cx="128" cy="236" r="11" fill="#FFFFFF"/>
+  <circle cx="250" cy="236" r="11" fill="#FFFFFF"/>
+  <circle cx="110" cy="262" r="5" fill="#FFFFFF"/>
+  <circle cx="232" cy="262" r="5" fill="#FFFFFF"/>
+  <!-- nose and mouth -->
+  <path d="M170 276 H192 L181 290 Z" fill="#D97F90" stroke="#D97F90" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M158 300 C164 310 176 310 181 298 C186 310 198 310 204 300" fill="none" stroke="#3E5942" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- whiskers -->
+  <g stroke="#3E5942" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M52 272 L2 268"/>
+    <path d="M54 290 L6 304"/>
+    <path d="M314 272 L362 268"/>
+    <path d="M312 290 L358 304"/>
+  </g>
+</svg>

@@ -51,6 +51,7 @@ The original plan is solid in shape. The changes below fix things that would hav
 | 33 | Sales tax | Not handled | Stripe Tax on Checkout and subscriptions | SaaS is taxable in many US states |
 | 34 | Market | Mixed US and UK conventions ("driver's licence" next to W-2 and 1099) | US first: US spelling, US tax templates, US time zones as defaults | Market choice drives data residency, retention rules and copy |
 | 35 | Compliance positioning | "Not certified" only | Public security page mapping our controls to the FTC Safeguards Rule and IRS Publication 4557, plus each vendor's SOC 2 report kept on file for customer questionnaires. Still no certification claims | Accountants need to show their own Safeguards Rule program covers the vendors they use |
+| 36 | Design tokens | Colors sampled from the PNG mockups; 180 ms stamp animation | Tokens, type stacks, layout, motion and the 400 ms seal taken from `Designs/DocuLink Design System v2.html`, which is now the visual source of truth (5.2, 5.4, 5.9). Two deliberate exceptions: dates use US formats, and the "Clients" nav item is post-MVP (1.3). The cat mark gets a vector version | The sampled colors drifted from the source, and the sampled input border (1.4:1) failed WCAG 1.4.11; the design system's control border passes at 3.4:1 |
 
 ---
 
@@ -104,7 +105,7 @@ System:
 
 ### 1.3 Later (explicitly out of the MVP)
 - Teams, roles and shared workspaces. **First post-launch priority** (Team plan, section 11). The data model is workspace-owned from day one so this needs no migration. The design `5 Settings - 02 Team.png` is a post-MVP screen; hide the Team tab in the MVP settings.
-- Client accounts or portals listing several requests.
+- Client accounts or portals listing several requests, and the requester's Clients screen (the "Clients" nav item in the designs). The MVP nav is Requests, Templates, Settings.
 - E-signatures, form fields, questionnaires.
 - Integrations (Google Drive, Dropbox, practice management software).
 - SMS reminders.
@@ -253,7 +254,9 @@ A rejection is saved as a draft on the requester's side (`rejection_note` set, `
 
 ### 5.2 Visual direction
 
-The subject is paperwork: folders, stamps, carbon copies. The memorable element is the **stamp**: when a requester approves an item, a small ink-stamp mark ("Approved") settles onto the file card with a short, physical animation (180 ms, respects reduced motion). The same mark appears on the client's success screen ("Received"). Everything else stays quiet.
+The subject is paperwork: folders, stamps, carbon copies. The memorable element is the **seal**: when a requester approves an item, a round ink seal ("Approved") lands on the file card. It drops from 1.8× scale at −16°, presses to 0.93× and settles at 1× in 400 ms, once, and respects reduced motion. The same seal appears on the client's success screen ("Received") and on a completed request ("Complete"). Everything else stays quiet.
+
+The full design system (principles, brand, color, type, layout, icons, components, motion, voice) is `Designs/DocuLink Design System v2.html`. Open it in a browser; it needs JavaScript. Where it and this document differ on visual details, the design system wins; on behavior and copy, this document wins.
 
 ### 5.3 Requester screens
 
@@ -356,7 +359,7 @@ The subject is paperwork: folders, stamps, carbon copies. The memorable element 
 ```
 
 - Keyboard review: J/K to move between items, A to approve, R to request changes, arrow keys between files in the preview. Shortcuts shown in a "?" popover.
-- Approve plays the stamp animation on the item card.
+- Approve lands the "Approved" seal on the item card.
 - **Request changes** expands an inline panel under the item: quick-pick reason chips plus a text field ("Tell John what to fix"). Saving shows the item as "Change drafted" with an Undo.
 - The sticky review bar counts drafted changes. **Send change requests (2)** opens a preview of the email the client will receive, then sends.
 - When everything is approved: banner "All items approved. Request completed." with **Download ZIP** as the primary button.
@@ -374,22 +377,45 @@ The subject is paperwork: folders, stamps, carbon copies. The memorable element 
 
 ### 5.4 Design tokens
 
-Sampled from the design files in `Designs/` (green palette, serif display type). Confirm hex values against the source design file before building; the names are what the code uses.
+Taken from `Designs/DocuLink Design System v2.html` (section 03 Colour). The names are what the code uses. Every text pair passes 4.5:1 and the control border passes 3:1.
 
 | Token | Hex | Use |
 |-------|-----|-----|
-| `forest` | `#1F3A2D` | Requester top bar, portal footer band |
-| `paper` | `#F3F4F1` | Page background |
-| `sheet` | `#FFFFFF` | Cards, panels, inputs |
-| `rule` | `#D9DDD8` | Dividers, progress track, input borders |
-| `ink` | `#1B211E` | Primary text, dark buttons ("Choose file") |
-| `ink-muted` | `#5F6763` | Secondary text, metadata |
-| `stamp` | `#2F7A52` | Primary action (Approve), item numerals, progress fill, links, focus ring, approved state |
-| `stamp-tint` | `#D5EBDD` | Avatar and success backgrounds |
-| `attention` | `#8A4A0B` | "To review", due soon, overdue, invite bounced, changes requested |
-| `danger` | `#B3261E` | Upload errors, blocked files, destructive actions |
+| `brand` | `#1E3A2A` | Requester header, portal footer, brand panels |
+| `on-brand` | `#CFE8D8` | Text and buttons on `brand` |
+| `accent-on-brand` | `#A8DDBE` | Italic accent word and active nav underline on `brand` |
+| `action` | `#2F7A52` | Primary button (one per view), required folio numbers, progress fill, focus ring |
+| `action-pressed` | `#256443` | Hover and pressed states, links |
+| `on-action` | `#F4FAF6` | Text on `action` and `done` fills |
+| `done` | `#1E6743` | "Added", "Approved", the seal |
+| `highlight` | `#DCEFE3` | Focus halo on fields, approved fill, avatars |
+| `paper` | `#F3F5F1` | Page background |
+| `surface` | `#FEFFFD` | Cards, panels, inputs |
+| `mist` | `#E8EDE7` | Neutral fills, disabled buttons |
+| `line` | `#E1E6DF` | Hairlines, dividers, progress track |
+| `line-strong` | `#C9D1C8` | Dashed rules |
+| `border` | `#858E86` | Control borders (inputs, selects, secondary buttons) |
+| `ink` | `#18201B` | Primary text, rules, ink buttons ("Choose file") |
+| `ink-2` | `#525A54` | Secondary text, metadata |
+| `ink-3` | `#5F6760` | Disabled text, optional folio numbers |
+| `attention` on `attention-tint` | `#86470A` on `#FAEBD2` | "To review", due soon, overdue, invite bounced, changes requested |
+| `danger` on `danger-tint` | `#8F1C13` on `#FBE4E1` | Expired, upload errors, blocked files, destructive actions |
 
-Type roles: a serif display face for request titles, item numerals and the reviewer's item heading; a clean sans for UI text; a monospace for metadata labels ("No. 0142", "Requested by", file names and sizes). Portal base size 17 px.
+**Type.** System font stacks; the web fonts are fallbacks only and are self-hosted (never embed or redistribute Apple's font files).
+- Display: `ui-serif, "New York", Newsreader, Georgia, serif`, Medium 500 and Medium Italic, never lighter. Titles, headlines, folio numbers, counts, quotes, the wordmark.
+- Interface: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Instrument Sans", system-ui, sans-serif`, 400, 500 and 600. Body, labels, buttons, tables, navigation.
+- Metadata: `ui-monospace, "SF Mono", SFMono-Regular, Menlo, "JetBrains Mono", monospace`, 400. Request numbers, file names, sizes, timestamps. Never sentences.
+- Scales: display 160, 128, 96; headline 64, 48, 32; quote 24 italic; interface title 28/34, title 2 22/28, lead 19/28, headline 17/22, body 17/24, subhead 15/20, badge 13/18, footnote 13/18; mono 12/16. Minimum 13 px sans and 12 px mono.
+- Sentence case everywhere. At most one italic word per headline, in `action` on paper or `accent-on-brand` on `brand`. Tabular figures for counts, dates and sizes.
+- Dates are US format: "Oct 17, 2026" in text and "10/17/2026" in mono metadata. The design system's day-first examples ("17.10.2026") are not used.
+
+**Brand mark.** The cat head, as a vector redraw of the design system's PNG: `Designs/brand/doculink-mark.svg`. Minimum 24 px, clear space of half its height, never recolored, outlined, rotated or stretched.
+
+**Layout.** 4 pt base; spacing 4, 8, 12, 16, 24, 32, 48, 64, 96. 12-column grid at 1440 with 96 margins (80 in app screens) and 32 gutters; header 68 px. Review uses a 260 / fluid / 380 split. Radius: label 4, input 10, button 12, card 18, badges are pills. Three elevations: flat (hairline only), card, float.
+
+**Icons.** Lucide line icons, 24 grid, 2 px stroke, always paired with a label.
+
+**Motion.** Fast 120 ms (hover, press, toggle), base 200 ms (badge swap, item open, focus), slow 400 ms (seal, page reveal). Standard easing `cubic-bezier(.2,.7,.2,1)`; seal easing `cubic-bezier(.2,1.4,.4,1)`. No loops.
 
 ### 5.5 ZIP naming convention
 
@@ -487,7 +513,7 @@ Uploads for one item run in parallel (max 3 at a time). Leaving the page mid-upl
 **Submit confirmation sheet.**
 "Send 4 files to Acme Accounting? You won't be able to change them unless Acme asks for a fix." Lists items and file counts; optional items left empty are shown as "Not included". Buttons: **Submit documents**, Keep editing.
 
-**Success screen.** Stamp mark "Received", then: "Acme Accounting has your documents. We've emailed you a receipt. If they need anything else, you'll get an email with a link back here." No further actions.
+**Success screen.** The "Received" seal, then: "Acme Accounting has your documents. We've emailed you a receipt. If they need anything else, you'll get an email with a link back here." No further actions.
 
 **Changes requested.** On return, a banner at the top: "Acme Accounting asked you to fix 1 item." Rejected items move to the top with an attention-colored left border and the note in a quote block: "Only page 1 was attached, please include page 2." Other items show a lock icon and "Accepted" or "Under review". Bottom bar: **Resubmit**, with "Update 1 item to resubmit" while disabled.
 
@@ -527,12 +553,12 @@ Client emails never contain file names that could reveal content in a lock-scree
 - Toasts use the same verb as the button: **Send request** then "Request sent"; **Approve** then "Approved"; **Send change requests** then "Change requests sent to John".
 
 ### 5.9 Accessibility
-- WCAG 2.2 AA contrast for all tokens in 5.4 (pairs to check: ink on paper, ink-muted on sheet, white on stamp, white on forest, attention on paper, danger on sheet).
+- WCAG 2.2 AA contrast for all tokens in 5.4 (pairs to check: ink and ink-2 on paper and surface, on-action on action and done, on-brand and accent-on-brand on brand, action-pressed on paper, attention on attention-tint, danger on danger-tint, done on highlight; border on surface and paper at 3:1).
 - Touch targets at least 44 x 44 px on the portal.
-- Visible focus ring (2 px stamp, 2 px offset) on every interactive element.
+- Visible focus on every interactive element: fields switch to an `ink` border with a `highlight` halo (design system); every other control gets a 2 px `action` ring with a 2 px offset (the halo alone is too faint on paper).
 - Upload progress announced via `aria-live="polite"`; errors via `role="alert"`.
 - Drag-to-reorder always has a keyboard alternative.
-- `prefers-reduced-motion` disables the stamp animation (the mark just appears).
+- `prefers-reduced-motion` disables the seal animation and every other transition (everything appears in its end state).
 - Portal text at 17 px base; supports 200% zoom without horizontal scrolling.
 - Language set on `<html>`; copy written at roughly an 8th-grade reading level.
 
