@@ -1,6 +1,6 @@
 # Requests: building, sending and tracking document requests
 
-Status: Draft, revision 2 waiting for your review · Last updated: 2026-10-20
+Status: Approved · Last updated: 2026-10-20
 Full spec: [specs/SPEC-requests.md](../../specs/SPEC-requests.md) · Product spec: MVP.md 3, 4.1, 4.7, 4.8, 5.3, 9.1
 
 ## In one paragraph
@@ -11,7 +11,7 @@ Requesters: tax preparers, accountants, HR teams, lawyers and university offices
 
 ## How it works
 1. **New request.**
-   - Pick a template, such as "Individual tax return", or start blank. Templates are grouped as Tax files, Accounting, HR and Universities, each with its own icon, plus Custom for the ones you save yourself.
+   - Pick a template, such as "Individual tax return", or start blank. Templates are grouped as Tax files, Accounting, HR, Legal and Universities, each with its own icon, plus Custom for the ones you save yourself.
    - Fill in the client's name and email, the title, an optional due date and a message.
    - Each item has what's needed, instructions, and "why" it's needed. A live phone preview shows what the client will see.
 2. **Send.** After a confirmation dialog, DocuLink creates a secret link, emails it from the firm's name and schedules reminders. Each request gets a number, like "No. 0142".
@@ -26,7 +26,7 @@ Requesters: tax preparers, accountants, HR teams, lawyers and university offices
    - extend the deadline
    - revoke the request
    - delete all its files once it's finished
-5. **Templates page.** Twelve ready-made templates in four groups, plus your own under Custom. Editing a ready-made one saves your own copy.
+5. **Templates page.** Fifteen ready-made templates in five groups, plus your own under Custom. Editing a ready-made one saves your own copy.
 6. **Rules everyone uses.** A request moves through fixed steps: draft, sent, in progress, needs review, changes requested, completed, plus expired and revoked. Nothing can skip a step. A completed request can be reopened by asking for changes again.
 
 ## Key decisions
@@ -47,8 +47,5 @@ Requesters: tax preparers, accountants, HR teams, lawyers and university offices
 ## Decided
 - The dashboard follows the design: a headline, cards for requests to review, and a table of requests waiting on clients.
 - Item instructions can't be edited after sending.
-- Templates are grouped as Tax files, Accounting, HR, Universities and Custom, each with its own icon.
-
-## Open questions
-- Are the twelve new starter templates right? They're new in this revision, and each group should be checked by someone who works in that field.
-- Lawyers are in the audience but have no template group. Add a Legal group, or leave lawyers to build their own under Custom?
+- Templates are grouped as Tax files, Accounting, HR, Legal, Universities and Custom, each with its own icon.
+- Before launch, someone who works in each field checks their group's templates.

@@ -105,7 +105,7 @@ Open client links for this workspace's requests resolve to "invalid link" afterw
 ### Onboarding steps 2 and 3
 
 - **Step 2: "Make it yours."** Logo and reply-to. **Continue** or **Skip**.
-- **Step 3: "Send your first request."** Group chips with icons (Tax files, Accounting, HR, Universities), the starter templates of the selected group as cards, plus "Start from scratch". Choosing one opens the builder with that template.
+- **Step 3: "Send your first request."** Group chips with icons (Tax files, Accounting, HR, Legal, Universities), the starter templates of the selected group as cards, plus "Start from scratch". Choosing one opens the builder with that template.
 - Progress dots: 1 is done (auth), then 2 and 3.
 
 ## Data

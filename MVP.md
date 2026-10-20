@@ -4,7 +4,7 @@ Version 1.2, October 2026. Status: ready to build.
 
 A requester sends a client one secure link. The client opens a mobile-friendly checklist, uploads files or photographs paperwork, and submits. The requester reviews item by item, asks for fixes where needed, and downloads a cleanly named ZIP.
 
-**Launch market: US tax preparers, accountants, HR teams, lawyers and universities.** Starter templates come in groups for tax files, accounting, HR and universities, plus the requester's own custom templates. The tax-season dates below still set the schedule, and the compliance mapping on the security page targets tax preparers and accountants (section 10). Build starts the week of October 26, 2026; the closed beta runs in December and public launch is before January 5, 2027, ahead of the US tax season (January to April). Missing that window costs a year of the strongest buying moment.
+**Launch market: US tax preparers, accountants, HR teams, lawyers and universities.** Starter templates come in groups for tax files, accounting, HR, legal and universities, plus the requester's own custom templates. The tax-season dates below still set the schedule, and the compliance mapping on the security page targets tax preparers and accountants (section 10). Build starts the week of October 26, 2026; the closed beta runs in December and public launch is before January 5, 2027, ahead of the US tax season (January to April). Missing that window costs a year of the strongest buying moment.
 
 This document is the build spec for the first paid version. It revises the original plan (section 0), fixes inconsistencies, cuts scope to what a solo developer can ship in about seven weeks, and adds the UI and UX layer the original plan left out. Version 1.1 adds the infrastructure, security and go-to-market changes in rows 23 to 35 of section 0. Version 1.2 adds the decisions made while writing the module specs (`specs/`), in rows 37 to 45.
 
@@ -52,7 +52,7 @@ The original plan is solid in shape. The changes below fix things that would hav
 | 34 | Market | Mixed US and UK conventions ("driver's licence" next to W-2 and 1099) | US first: US spelling, US tax templates, US time zones as defaults | Market choice drives data residency, retention rules and copy |
 | 35 | Compliance positioning | "Not certified" only | Public security page mapping our controls to the FTC Safeguards Rule and IRS Publication 4557, plus each vendor's SOC 2 report kept on file for customer questionnaires. Still no certification claims | Accountants need to show their own Safeguards Rule program covers the vendors they use |
 | 36 | Design tokens | Colors sampled from the PNG mockups; 180 ms stamp animation | Tokens, type stacks, layout, motion and the 400 ms seal taken from `Designs/DocuLink Design System v2.html`, which is now the visual source of truth (5.2, 5.4, 5.9). Two deliberate exceptions: dates use US formats, and the "Clients" nav item is post-MVP (1.3). The cat mark gets a vector version | The sampled colors drifted from the source, and the sampled input border (1.4:1) failed WCAG 1.4.11; the design system's control border passes at 3.4:1 |
-| 37 | Audience | US tax preparers first; mortgage, lending and rental templates | Tax preparers, accountants, HR teams, lawyers and universities. Starter templates are grouped as Tax files, Accounting, HR and Universities, plus Custom for the requester's own, each group with its own icon (5.3, 7 `templates.category`) | Product decision (Oct 20, 2026): the same collection loop serves all five audiences, and the groups make the right starting point easy to find |
+| 37 | Audience | US tax preparers first; mortgage, lending and rental templates | Tax preparers, accountants, HR teams, lawyers and universities. Starter templates are grouped as Tax files, Accounting, HR, Legal and Universities, plus Custom for the requester's own, each group with its own icon (5.3, 7 `templates.category`) | Product decision (Oct 20, 2026): the same collection loop serves all five audiences, and the groups make the right starting point easy to find |
 | 38 | Name, domain and sender | Placeholders ("[App Name]" and "[DocuLink]") | DocuLink at `doculinkapp.com`. Email is sent from `requests@mail.doculinkapp.com` | The SES identity, DNS and Terraform need the final domain in week 1. `requests@` reads less like a marketing sender than `notify@` |
 | 39 | Reopening a completed request | `completed` was final | **Reopen** on the completed view lets the requester un-approve items and draft notes. Sending them moves the request `completed → changes_requested` with one email, like any change request (3.1, 4.4) | The design has Reopen, and approving the last item by mistake otherwise had no undo. Reusing the change-request flow adds no new client screen |
 | 40 | Retention | 30, 90 or 365 days; automatic deletion a should-have | 30 days, 90 days (default) or a custom number of days from 1 to 365. Automatic deletion is a must-have; only the 7-day warning email stays a should-have. A changed setting applies to requests already completed, after a warning that says how many will be deleted (4.7) | The landing page, the client screens and the security page all promise automatic deletion, so it must be true at launch |
@@ -74,7 +74,7 @@ Requester:
 - Workspace profile: business name, logo, time zone, reply-to email.
 - Create, edit, send, duplicate, revoke and delete requests.
 - Checklist builder: label, helper instructions, required or optional, reorder.
-- Save a checklist as a template; start a request from a starter template (grouped as Tax files, Accounting, HR and Universities) or a custom one.
+- Save a checklist as a template; start a request from a starter template (grouped as Tax files, Accounting, HR, Legal and Universities) or a custom one.
 - Dashboard grouped by what needs attention.
 - Request detail: progress, per-item files, activity timeline.
 - Inline preview (PDF and images) and single-file download.
@@ -286,7 +286,7 @@ The full design system (principles, brand, color, type, layout, icons, component
 **Onboarding (3 steps, skippable after step 1).**
 1. Business name and time zone (required).
 2. Logo upload and reply-to email.
-3. Create your first request from a starter template, picked by group (Tax files, Accounting, HR, Universities), or start from scratch.
+3. Create your first request from a starter template, picked by group (Tax files, Accounting, HR, Legal, Universities), or start from scratch.
 
 **Dashboard.** Grouped by who has the next move, not by raw status. The layout follows the design `2 Requester dashboard - 01 Requests.png`: a headline ("3 to review." and the next due request), cards for requests that need review, a "Waiting on client" table, and counts that act as the tabs. The wireframe below shows the behavior, not the layout:
 
@@ -392,7 +392,7 @@ The full design system (principles, brand, color, type, layout, icons, component
 - File states in the item list and preview: "Scanning..." (spinner, no preview), clean (normal), "Blocked: failed the security scan" (no preview or download; actions: Remove, Request changes).
 - Large requests: **Download ZIP** becomes **Prepare ZIP**, then "Preparing your ZIP..." with progress, then **Download ZIP** (link valid for 24 hours).
 
-**Templates** (top nav). Starter templates grouped as Tax files, Accounting, HR and Universities, then the requester's own under Custom. Each group has its own icon (Lucide `Receipt`, `Calculator`, `Users`, `GraduationCap`, `PencilRuler`), always next to its text label. Editing a starter saves a copy in the workspace. A template saved from a request goes under Custom unless the requester picks another group.
+**Templates** (top nav). Fifteen starter templates grouped as Tax files, Accounting, HR, Legal and Universities, then the requester's own under Custom. Each group has its own icon (Lucide `Receipt`, `Calculator`, `Users`, `Scale`, `GraduationCap`, `PencilRuler`), always next to its text label. Editing a starter saves a copy in the workspace. A template saved from a request goes under Custom unless the requester picks another group.
 
 **Settings.** Workspace (business name, logo, time zone, reply-to, default reminders and file retention; matches the `5 Settings - 01 Workspace` design), Security (two-factor, backup codes, trusted devices, active sessions), Billing (plan, monthly or annual, "Manage billing" opens Stripe portal), Account (sign-in methods, delete account). The Team tab from the designs is hidden until the Team plan ships.
 
@@ -703,7 +703,7 @@ scan_status:    'pending' | 'clean' | 'infected' | 'failed'
 export_status:  'queued' | 'building' | 'ready' | 'failed' | 'expired'
 member_role:    'owner' | 'member'
 actor:          'requester' | 'recipient' | 'system'
-template_category: 'tax' | 'accounting' | 'hr' | 'university' | 'custom'
+template_category: 'tax' | 'accounting' | 'hr' | 'legal' | 'university' | 'custom'
 
 workspaces
   id                   uuid pk
@@ -1090,7 +1090,7 @@ Estimates assume one full-time developer, starting October 26, 2026. The version
 - Better Auth: magic link, Google and two-factor. Onboarding step 1 and forced two-factor setup.
 
 **Milestone 2: Requests and portal uploads (weeks 2 to 3, Nov 2 to 15)**
-- Request builder with live preview, grouped starter templates (Tax files, Accounting, HR, Universities), drafts, send flow, token generation and invite email (with SES message ID recorded).
+- Request builder with live preview, grouped starter templates (Tax files, Accounting, HR, Legal, Universities), drafts, send flow, token generation and invite email (with SES message ID recorded).
 - Dashboard with tabs, search and empty states.
 - Portal: token validation, Turnstile session, checklist, Add file sheet, camera capture, HEIC conversion and resize, SHA-256 checksum, presign, direct upload with progress and retry, confirm with HEAD check, remove file.
 - AWS events webhook: GuardDuty scan results and SES delivery, bounce and complaint events; "Invite bounced" flag and Fix email flow.
@@ -1117,6 +1117,7 @@ Estimates assume one full-time developer, starting October 26, 2026. The version
 - Accessibility pass (keyboard-only run of both apps, VoiceOver and TalkBack on the portal).
 - Load test: 20 parallel uploads on one request; ZIP of 100 files.
 - Privacy page ("How is my data protected?"), "Why did I get this?", terms, privacy policy (owner and date for the legal text still open, 15 Q8).
+- Starter templates reviewed by someone who works in each field (tax, accounting, HR, legal, universities).
 - Closed beta with 5 to 10 tax preparers from mid-December, then public launch before January 5, 2027.
 
 ---

@@ -1,7 +1,7 @@
 # Spec: Requests, state machines, builder and dashboard
 
 Module id: `requests`
-Status: Draft (revision 2: grouped starter templates and Reopen; awaiting review)
+Status: Approved
 Implements: MVP.md 3 (state machines), 4.1, 4.7, 4.8, 5.3 (dashboard, builder, templates), 5.7 (reminder opt-out), 7 (`document_requests`, `checklist_items`, `templates`, `reminder_schedules`, request-scoped `activity_events` reads), 9.1 (request actions), 10 (tokens)
 Designs: `2 Requester dashboard - 01 Requests.png`, `2 Requester dashboard - 02 New request.png`; design system DS 07 (request items, request label, progress and rows)
 Reading doc: [docs/specs/requests.md](../docs/specs/requests.md)
@@ -149,7 +149,7 @@ allowedActions(request): Set<ActionName>   // drives menus; same rules the servi
 | `items[].instructions` | ≤ 500 | ≤ 500 |
 | `items[].reason` ("Why:") | ≤ 200 | ≤ 200 |
 | `items[].required` | boolean | boolean |
-| template `category` | `tax`, `accounting`, `hr`, `university` or `custom` | same |
+| template `category` | `tax`, `accounting`, `hr`, `legal`, `university` or `custom` | same |
 
 All strings are NFC normalized, with control characters stripped (newlines are allowed in `message` and `instructions`). Field error copy follows DS 09, for example "Enter an email address, like name@example.com" and "Add at least one item."
 
@@ -261,7 +261,7 @@ getRequestHeader(ctx, id), listActivity(ctx, id, { cursor })
 - **Save as template:** in an overflow menu.
 
 **Templates** (`/app/templates`):
-- Sections in this order: Tax files, Accounting, HR, Universities, Custom. Each section header shows its icon and label; a category filter (segmented control) sits above them.
+- Sections in this order: Tax files, Accounting, HR, Legal, Universities, Custom. Each section header shows its icon and label; a category filter (segmented control) sits above them.
 - Each row: name, item count, updated, and a "Starter" tag for built-in templates.
 - The editor uses the same item editor as the builder, plus a Category select. Editing a starter creates a workspace copy; the starter stays available.
 - Custom shows "Templates you save appear here." when empty.
@@ -273,49 +273,188 @@ Categories (`TEMPLATE_CATEGORIES`, icons from `lucide-react`, always next to the
 | `tax` | Tax files | `Receipt` |
 | `accounting` | Accounting | `Calculator` |
 | `hr` | HR | `Users` |
+| `legal` | Legal | `Scale` |
 | `university` | Universities | `GraduationCap` |
 | `custom` | Custom | `PencilRuler` |
 
-### Starter templates (US, content for beta review)
+### Starter templates (US)
 
-Twelve starters in four groups. Custom has no starters; it holds the requester's own templates. "req" means required, "opt" optional; the text after the colon is the "Why:" line clients see.
+Fifteen starters in five groups. Custom has no starters; it holds the requester's own templates. "Why" is the line clients see under each item.
 
 **Tax files** (`tax`, `Receipt`)
 
-| Template | Items |
-|---|---|
-| Individual tax return | Photo ID · req: to confirm your identity when we file · W-2 forms · req: they show your wages and the tax already withheld · 1099 forms (INT, DIV, B, NEC, R) · opt: they report other income · Form 1098 mortgage interest · opt: it can lower your tax · Form 1098-T tuition statement · opt: for education credits · Last year's tax return · opt: so we can carry figures forward · Form 1095-A · opt: only if you had Marketplace health insurance |
-| Self-employed and small business | Photo ID · req · 1099-NEC and 1099-K forms · req: they report your business income · Income and expense summary or profit and loss · req: it's the basis of Schedule C · Business bank and credit card statements, all 12 months · opt: to check income and expenses · Vehicle mileage log · opt: for the vehicle deduction · Home office size (square feet) · opt: for the home office deduction · Estimated tax payment records · opt: so payments you already made are counted |
-| Rental property income | Rent received for the year · req: it's reported on Schedule E · Property tax bill · req: it's deductible · Form 1098 mortgage interest · opt: it's deductible · Repair, insurance and management invoices · opt: they're deductible expenses · Closing statement · opt: only if you bought or sold a property this year · 1099-MISC forms · opt: if a manager or tenant sent one |
+*Individual tax return*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Photo ID | Yes | To confirm your identity when we file. |
+| 2 | W-2 forms | Yes | They show your wages and the tax already withheld. |
+| 3 | 1099 forms (INT, DIV, B, NEC, R) | No | They report other income, like interest or investments. |
+| 4 | Form 1098 mortgage interest | No | It can lower your tax. |
+| 5 | Form 1098-T tuition statement | No | For education credits. |
+| 6 | Form 1095-A | No | Only if you had Marketplace health insurance. |
+| 7 | Last year's tax return | No | So we can carry figures forward. |
+
+*Self-employed and small business*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Photo ID | Yes | To confirm your identity when we file. |
+| 2 | Income and expense summary or profit and loss | Yes | It's the basis of your Schedule C. |
+| 3 | 1099-NEC and 1099-K forms | No | If clients or payment apps sent you one. |
+| 4 | Business bank and credit card statements, all 12 months | No | To check income and expenses. |
+| 5 | Vehicle mileage log | No | For the vehicle deduction. |
+| 6 | Home office size in square feet | No | For the home office deduction. |
+| 7 | Estimated tax payment records | No | So payments you already made are counted. |
+
+*Rental property income*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Rent received for the year | Yes | It's reported on Schedule E. |
+| 2 | Form 1098 mortgage interest | No | It's deductible. |
+| 3 | Property tax bill | No | It's deductible, unless your lender paid it from escrow. |
+| 4 | Repair, insurance and management invoices | No | They're deductible expenses. |
+| 5 | Closing statement | No | Only if you bought or sold a property this year. |
+| 6 | 1099-MISC forms | No | If a property manager or tenant sent one. |
 
 **Accounting** (`accounting`, `Calculator`)
 
-| Template | Items |
-|---|---|
-| New client onboarding | Photo ID · req: to confirm who we're working with · Signed engagement letter · req: it sets out what we'll do for you · Last year's tax return · req: so we start from the right figures · IRS or state notices · opt: so nothing is missed · EIN confirmation letter (CP 575) · opt: for business clients · Business formation documents · opt: articles, operating agreement or bylaws |
-| Monthly bookkeeping | Bank statements for the month, every account · req: to reconcile your books · Credit card statements for the month · req: to record expenses · Receipts for business purchases · opt: to back up each expense · Sales or invoicing report · opt: to record income · Payroll reports · opt: if you ran payroll this month · Loan statements · opt: to split principal and interest |
-| Year-end close | December bank statements, every account · req: to confirm year-end balances · December credit card and loan statements · req: to confirm what you owe · Large asset purchases with invoices · opt: for depreciation · Inventory count at year end · opt: if you hold stock · Unpaid customer invoices and unpaid bills · opt: for receivables and payables · Contractor list with W-9 forms · opt: so we can file 1099s by January 31 |
+*New client onboarding*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Photo ID | Yes | To confirm who we're working with. |
+| 2 | Signed engagement letter | Yes | It sets out what we'll do for you. |
+| 3 | Last year's tax return | Yes | So we start from the right figures. |
+| 4 | IRS or state notices | No | So nothing is missed. |
+| 5 | EIN confirmation letter (CP 575) | No | For business clients. |
+| 6 | Business formation documents | No | Articles, operating agreement or bylaws. |
+
+*Monthly bookkeeping*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Bank statements for the month, every account | Yes | To reconcile your books. |
+| 2 | Credit card statements for the month | Yes | To record expenses. |
+| 3 | Receipts for business purchases | No | To back up each expense. |
+| 4 | Sales or invoicing report | No | To record income. |
+| 5 | Payroll reports | No | If you ran payroll this month. |
+| 6 | Loan statements | No | To split principal and interest. |
+
+*Year-end close*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | December bank statements, every account | Yes | To confirm year-end balances. |
+| 2 | December credit card and loan statements | Yes | To confirm what you owe. |
+| 3 | Invoices for large purchases | No | Equipment and vehicles are depreciated. |
+| 4 | Inventory count at year end | No | If you hold stock. |
+| 5 | Unpaid customer invoices and unpaid bills | No | For receivables and payables. |
+| 6 | Contractor list with W-9 forms | No | So we can file 1099s by January 31. |
 
 **HR** (`hr`, `Users`)
 
-| Template | Items |
-|---|---|
-| New hire paperwork | Form I-9 identity and work authorization documents · req: we must check these within 3 business days of your start date; bring the originals on day one · Form W-4 · req: it sets your federal tax withholding · State withholding form · opt: if your state has one · Direct deposit form or voided check · req: so we can pay you · Signed offer letter · req: for your employee file · Emergency contact form · opt: who to call if something happens at work |
-| Contractor onboarding | Form W-9 · req: we need your taxpayer details to issue a 1099 · Signed contractor agreement · req: it sets out the work and payment terms · Certificate of insurance · opt: if the work requires it · Business license · opt: if your work requires one |
-| Benefits enrollment | Marriage certificate · opt: to add a spouse to your coverage · Birth or adoption certificates · opt: to add children · Proof of other coverage ending · opt: to enroll outside open enrollment · Dependent Social Security cards · opt: the plan needs each dependent's SSN |
+*New hire paperwork*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Form I-9 identity and work authorization documents | Yes | We must check these within 3 business days of your start date. Bring the originals on day one. |
+| 2 | Form W-4 | Yes | It sets your federal tax withholding. |
+| 3 | State withholding form | No | If your state has one. |
+| 4 | Signed offer letter | Yes | For your employee file. |
+| 5 | Direct deposit form or voided check | No | So we can pay you by direct deposit. |
+| 6 | Emergency contact form | No | Who to call if something happens at work. |
+
+*Contractor onboarding*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Form W-9 | Yes | We need your taxpayer details to issue a 1099. |
+| 2 | Signed contractor agreement | Yes | It sets out the work and payment terms. |
+| 3 | Certificate of insurance | No | If the work requires it. |
+| 4 | Business license | No | If your work requires one. |
+
+*Benefits enrollment*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Marriage certificate | No | To add a spouse to your coverage. |
+| 2 | Birth or adoption certificates | No | To add children. |
+| 3 | Proof that other coverage ended | No | To enroll outside open enrollment. |
+
+**Legal** (`legal`, `Scale`)
+
+*New client intake*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Photo ID | Yes | To confirm who we're representing. |
+| 2 | Signed engagement letter | Yes | It sets out our fees and the work we'll do. |
+| 3 | Documents about your matter | Yes | Letters, contracts, notices or emails that explain what happened. |
+| 4 | Court papers you've received | No | So we don't miss a deadline. |
+| 5 | Insurance policies | No | A policy may cover your costs or your claim. |
+
+*Estate planning*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Photo ID | Yes | To confirm your identity. |
+| 2 | Current will or trust | No | So we can update it rather than start over. |
+| 3 | Deeds for real estate you own | No | To plan how the property passes. |
+| 4 | Recent bank, brokerage and retirement statements | No | To list your assets. |
+| 5 | Life insurance policies | No | To check who the beneficiaries are. |
+| 6 | Existing powers of attorney and health care directives | No | So the new ones replace them cleanly. |
+
+*Family law financial disclosure*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Tax returns, last 2 years | Yes | Courts use them to work out support. |
+| 2 | Pay stubs, last 3 months | Yes | To show your current income. |
+| 3 | Bank statements, last 6 months, every account | Yes | To list your assets. |
+| 4 | Retirement and brokerage statements | No | These accounts are often divided. |
+| 5 | Mortgage and loan statements | No | To list your debts. |
+| 6 | Credit card statements, last 3 months | No | To list your debts and spending. |
 
 **Universities** (`university`, `GraduationCap`)
 
-| Template | Items |
-|---|---|
-| Admissions documents | Transcripts from every school attended · req: to review your academic record · Personal statement · req: it's part of your application · Test scores · opt: only if you choose to submit them · Resume · opt: to show work and activities · Photo ID or passport · opt: to confirm your identity |
-| Financial aid verification | Verification worksheet · req: we're required to confirm your FAFSA information · IRS tax return transcript (student and parents) · req: to confirm reported income · W-2 forms · req: to confirm wages · Proof of untaxed income · opt: for example child support or veterans' benefits · Photo ID · opt: only if you were selected for identity verification |
-| International student (I-20) | Passport identity page · req: to issue your I-20 · Bank statements or sponsor letter · req: to show you can cover the first year of costs · English test scores (TOEFL, IELTS or Duolingo) · opt: if English isn't your first language · Academic transcripts · req: to confirm your previous study · Previous I-20s and visas · opt: if you've studied in the US before |
+*Admissions documents*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Transcripts from every school attended | Yes | To review your academic record. |
+| 2 | Personal statement | Yes | It's part of your application. |
+| 3 | Test scores | No | Only if you choose to submit them. |
+| 4 | Resume | No | To show your work and activities. |
+| 5 | Photo ID or passport | No | To confirm your identity. |
+
+*Financial aid verification*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Verification worksheet | Yes | We're required to confirm your FAFSA information. |
+| 2 | IRS tax return transcript (student and parents) | Yes | To confirm reported income. |
+| 3 | W-2 forms | Yes | To confirm wages. |
+| 4 | Proof of untaxed income | No | For example child support or veterans' benefits. |
+| 5 | Photo ID | No | Only if you were selected for identity verification. |
+
+*International student (I-20)*
+
+| # | Item | Required | Why |
+|---|---|---|---|
+| 1 | Passport identity page | Yes | To issue your I-20. |
+| 2 | Academic transcripts | Yes | To confirm your previous study. |
+| 3 | Bank statements or sponsor letter | Yes | To show you can cover the first year of costs. |
+| 4 | English test scores (TOEFL, IELTS or Duolingo) | No | If English isn't your first language. |
+| 5 | Previous I-20s and visas | No | If you've studied in the US before. |
 
 Content rules:
-- Labels ≤ 80 characters and "Why:" lines ≤ 200, as in the item schema. Item counts stay ≤ 8 so the portal fits on one phone scroll.
+- Labels ≤ 80 characters and "Why" lines ≤ 200, as in the item schema. At most 8 items per template, so the portal fits on one phone scroll.
 - Wording follows DS 09: plain, second person, no jargon without the form name.
-- Starters are content, not law. The template page says "Check these against your own requirements." under the Starter tag.
+- Never ask for Social Security cards or full account numbers in a label; the documents themselves carry what's needed.
+- Starters are content, not law or tax advice. The template page says "Check these against your own requirements." under the Starter tag.
+- Before launch, someone who works in each field reviews their group (tracked in the M5 checklist).
 
 ## Data
 
@@ -328,7 +467,7 @@ Schema additions (in MVP.md 7 since v1.2):
 | `document_requests.number int not null`, `unique (workspace_id, number)` | "No. 0142" appears on every screen in the designs and the design system's request label |
 | `workspaces.next_request_number int not null default 1` | Assigned with `UPDATE workspaces SET next_request_number = next_request_number + 1 … RETURNING` inside the create transaction, so there are no gaps or races |
 | `checklist_items.reason text null`; template items JSON gains `reason` | The designs and DS principle "Show the ask" put "Why:" under every item |
-| `templates.category template_category not null default 'custom'` | Groups templates as Tax files, Accounting, HR, Universities and Custom (MVP.md 0 row 37) |
+| `templates.category template_category not null default 'custom'` | Groups templates as Tax files, Accounting, HR, Legal, Universities and Custom (MVP.md 0 row 37) |
 | `reminder_schedules.stopped_by_recipient_at timestamptz null`; `next_send_at` nullable | The client's unsubscribe must survive `resumeReminders`; drafts have no send time yet |
 
 The reminder schedule row is created at create time with `is_active = false` and `interval_days` from the builder, and activated at send. That way the builder's choice persists in drafts, which MVP.md 7 has no other column for.
@@ -428,7 +567,7 @@ MVP.md 14 acceptance criteria owned or shared:
 ## Success Criteria
 
 - [ ] Transition tables match MVP.md 3 and are exhaustively tested.
-- [ ] Builder, send, dashboard and templates match the designs, with the twelve starter templates in four groups plus Custom, each group with its icon.
+- [ ] Builder, send, dashboard and templates match the designs, with the fifteen starter templates in five groups plus Custom, each group with its icon.
 - [ ] Every 9.1 request action works with the status rules above and has integration tests, including cross-workspace 404s.
 - [ ] Tokens are stored hashed and encrypted. Regenerate and revoke invalidate old links immediately.
 - [ ] Bounced invites are flagged, sorted first, and fixable, with the reminder pause verified.
@@ -444,9 +583,10 @@ MVP.md 14 acceptance criteria owned or shared:
 ## Decisions (Oct 20, 2026)
 
 1. **Dashboard layout:** follow the design. The count list is the tab switcher.
-2. **Starter templates:** grouped as Tax files, Accounting, HR, Universities and Custom, each with its own icon. The content above is new in revision 2 and needs your review.
+2. **Starter templates:** grouped as Tax files, Accounting, HR, Legal, Universities and Custom, each with its own icon. Content chosen and corrected by us (you delegated it); a reviewer from each field checks it before launch (MVP.md 13 M5).
 3. **Edit after send:** no. Sent requests allow title, due date, message and adding items only.
+4. **Legal group:** added, with client intake, estate planning and family law financial disclosure.
 
 ## Open Questions
 
-1. **Lawyers.** They're in the launch audience (MVP.md header) but have no template group. Add a Legal group (for example client intake, discovery documents), or leave them to Custom for now?
+None.

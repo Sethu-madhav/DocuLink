@@ -22,7 +22,7 @@ Accountants.
 5. **Onboarding** after sign-up:
    1. business name and time zone
    2. logo and reply-to, which can be skipped
-   3. "Send your first request": pick a template group (Tax files, Accounting, HR, Universities), then a template, and the request builder opens ready to go
+   3. "Send your first request": pick a template group (Tax files, Accounting, HR, Legal, Universities), then a template, and the request builder opens ready to go
 6. **Deleting an account:**
    1. Sign everyone out.
    2. Delete every stored file and every copy.

@@ -1,6 +1,6 @@
 # Site: landing page and trust pages
 
-Status: Draft, revision 2 waiting for your review · Last updated: 2026-10-20
+Status: Approved · Last updated: 2026-10-20
 Full spec: [specs/SPEC-site.md](../../specs/SPEC-site.md) · Product spec: MVP.md 1.1, 10, 11
 
 ## In one paragraph
@@ -35,4 +35,3 @@ The public website. It sells DocuLink to tax preparers, accountants, HR teams, l
 
 ## Open questions
 - Who writes the terms, privacy policy and data processing addendum, and by when? Decided later, but they must be ready before the mid-December beta.
-- Please review the new audience wording and the "Who it's for" section.

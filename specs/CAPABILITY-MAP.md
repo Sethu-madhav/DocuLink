@@ -1,6 +1,6 @@
 # Capability Map: DocuLink MVP
 
-Status: Approved (revision 2 pending review, see Revision log)
+Status: Approved (revision 2 approved 2026-10-20)
 Source: MVP.md (version 1.2)
 Last updated: 2026-10-20
 
@@ -43,7 +43,7 @@ This follows the MVP.md 13 milestones: foundation, ui, email (sign-in link only)
 - Everything in MVP.md 1.2 (should-haves after launch) and 1.3 (later), including Teams and the `5 Settings - 02 Team` screen.
 
 ## Revision log
-- **Revision 2 (2026-10-20, pending review).** Written while drafting the module specs:
+- **Revision 2 (2026-10-20, approved).** Written while drafting the module specs:
   - `auth` depends on `email` (sign-in link and security emails).
   - `requests` depends on `billing` (entitlements before create and send).
   - The Templates page moves from settings to `requests`; settings gains account deletion.

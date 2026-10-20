@@ -1,7 +1,7 @@
 # Spec: Marketing site and trust pages
 
 Module id: `site`
-Status: Draft (revision 2: wider audience; awaiting review)
+Status: Approved
 Implements: MVP.md 1.1 (public security page), 10 (honest positioning, compliance support), 11 (pricing), 13 M5 (privacy page, terms, privacy policy), 15 Q6–Q7 (client-facing pages)
 Designs: `4 Landing and sign-in - 01 Landing.png`; design system DS 01–09
 Reading doc: [docs/specs/site.md](../docs/specs/site.md)
@@ -75,7 +75,7 @@ src/components/site/              → Hero, HowItWorks, ClientSection, Retention
    - `Receipt` Tax preparers: individual returns, self-employed clients
    - `Calculator` Accountants: new client onboarding, monthly bookkeeping
    - `Users` HR teams: new hire paperwork, contractor onboarding
-   - `Scale` Law firms: client intake documents, using your own templates
+   - `Scale` Law firms: new client intake, estate planning
    - `GraduationCap` Universities: admissions documents, financial aid verification
 4. **For your clients:** a phone mockup and "No account. No password. *One link.*"
 5. **Keep only what's needed:** a, b, c points. Retention "Deleted 90 days after completion by default, or when you choose" (automation step 4 is a must-have).
