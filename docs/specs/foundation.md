@@ -31,9 +31,9 @@ Customers never see it, but every security answer we give depends on it.
    - only then send emails or schedule jobs
 5. **Errors** come back to people as plain sentences that say what to do next. Technical details go to our error tracker with client information removed.
 6. **SOC 2 readiness, from day one.** We aren't getting audited yet, but we run the controls an auditor checks, so the evidence builds up from the start:
-   - every code change is reviewed by a second person before it reaches the main branch
+   - every code change goes through a pull request with automatic checks; while you're solo you sign off each week's changes, and once a second engineer joins, every change needs their approval
    - automatic scans for vulnerable libraries, risky code and leaked secrets, with fix deadlines
-   - logs kept for a year, plus alerts and uptime checks
+   - logs kept in Axiom (free while building, a year of history from the beta), plus alerts and uptime checks
    - staff sign in to AWS and every vendor with their own account and a second factor; no shared logins
    - staff never open client documents; any look at production data is recorded, and production data never leaves production
    - written runbooks for incidents, key rotation and backup restores, and a quarterly review of who has access
@@ -56,7 +56,5 @@ Customers never see it, but every security answer we give depends on it.
 - The AWS setup is written in Terraform.
 - The domain is doculinkapp.com, and email is sent from mail.doculinkapp.com.
 - Developers use a sandbox in the staging AWS account rather than offline imitations of AWS.
-- SOC 2 controls start on day one and work for a team; the audit comes when firms ask.
-
-## Open questions
-- Where do we keep a year of logs? Recommended: Axiom, connected to Vercel in about an hour. The alternative keeps them in our own AWS account but takes about 2 days.
+- SOC 2 controls start on day one; the audit comes when firms ask.
+- Logs go to Axiom: about an hour to connect, free during the build, and a paid plan with a year of history from the beta.

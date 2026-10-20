@@ -61,7 +61,7 @@ The original plan is solid in shape. The changes below fix things that would hav
 | 43 | Reminder opt-out | None | Reminder emails carry a one-click `List-Unsubscribe` header and a "Stop reminders for this request" link. It stops scheduled and manual reminders for that request only, and the requester sees it (5.7, 7, 9.3) | Gmail and Yahoo sender rules favor it, and a client who wants fewer emails shouldn't have to mark them as spam |
 | 44 | Data model additions | None | `document_requests.number` (shown as "No. 0142"); `workspaces.next_request_number`, `onboarded_at`, `past_due_since` and `deleting_at`; `checklist_items.reason` (the "Why:" line); `templates.category`; `reminder_schedules.stopped_by_recipient_at`, with `next_send_at` nullable for drafts; `zip_exports.file_set_hash` (7) | Each one backs a screen in the designs or a rule in a module spec |
 | 45 | Smaller corrections from the module specs | Various | `proxy.ts` (Node.js) replaces Edge middleware; the IAM role gains the version, tagging and multipart permissions that deletion needs; a quarantine key prefix; an audit-log trigger bypass used only by account deletion and Delete draft; PDFs previewed with pdf.js (scripting off) instead of an iframe; logos PNG, JPEG or WEBP only; client thumbnails only for clean files; Delete draft removes the draft; submitting needs at least one file; `unapproveItem` and `removeBlockedFile`; the dashboard follows its design; Settings tabs are Workspace, Security, Billing and Account, with Templates in the top nav; beta pricing is a promotion code | Found while writing the module specs; each is described where it lands below |
-| 46 | SOC 2 | A post-launch decision, nothing until then | SOC 2 readiness from day one: the engineering controls (change review, vulnerability scanning, one-year logs, staff access through SSO with MFA, a production data access rule, incident response) and the people controls for every hire run from the start. The policies, compliance platform, penetration test and audit wait until firms ask (10, 13, 14) | A Type II report can only cover months in which the controls were already running and leaving evidence. The team will grow beyond one person, so access and change controls must work for several people from the start |
+| 46 | SOC 2 | A post-launch decision, nothing until then | SOC 2 readiness from day one: the engineering controls (change review, vulnerability scanning, one-year logs, staff access through SSO with MFA, a production data access rule, incident response) and the people controls for every hire run from the start. The policies, compliance platform, penetration test and audit wait until firms ask (10, 13, 14) | A Type II report can only cover months in which the controls were already running and leaving evidence. The team starts with one person and will grow, so each control has a solo form now and a team form later |
 
 ---
 
@@ -641,7 +641,7 @@ AWS resources (bucket, KMS key, IAM role, SES identity and configuration set, Gu
 | Billing | Stripe Checkout, Customer Portal, webhooks, Stripe Tax | Solo plan, monthly and annual prices, 14-day trial |
 | ZIP | `archiver` (store mode, level 0) piped through `Readable.toWeb` (direct) or into an S3 multipart `Upload` (background) | No disk, no full buffering |
 | Client-side images | Canvas resize for captures; `heic2any` lazy-loaded | Runs before presign |
-| Monitoring | Sentry (errors, performance), PostHog (events, masked replay) | Replay disabled on preview components |
+| Monitoring | Sentry (errors, performance, uptime), PostHog (events, masked replay), Axiom (application logs via the Vercel integration) | Replay disabled on preview components |
 
 ### 6.1 S3 key layout
 ```
@@ -1032,14 +1032,14 @@ Portal API requests authenticate with the portal cookie only (never a token in t
 
 **Honest positioning.** The MVP is not HIPAA- or SOC 2-certified. Marketing copy must not claim "bank-level security", compliance certifications, or "SOC 2 ready" before an audit report exists.
 
-**Compliance support for tax preparers.** Tax preparers must keep a written information security program under the FTC Safeguards Rule and IRS Publication 4557, and that program has to cover vendors like us. We publish a security page that describes each control in plain language and maps it to those requirements: MFA, encryption in transit and at rest, access control, malware scanning, audit log, retention and deletion, incident response contact. Each vendor's SOC 2 Type II report (Vercel, Neon, AWS, Upstash, Stripe, Sentry, PostHog) is collected and kept on file to answer customer security questionnaires. Customers get a data processing addendum and a sub-processor list. The SOC 2 audit for us waits until firms ask for it; the controls start on day one (below). The same page serves HR teams, law firms and universities as plain descriptions of the controls; we make no claims about rules specific to them (for example FERPA, HIPAA or bar association guidance).
+**Compliance support for tax preparers.** Tax preparers must keep a written information security program under the FTC Safeguards Rule and IRS Publication 4557, and that program has to cover vendors like us. We publish a security page that describes each control in plain language and maps it to those requirements: MFA, encryption in transit and at rest, access control, malware scanning, audit log, retention and deletion, incident response contact. Each vendor's SOC 2 Type II report (Vercel, Neon, AWS, Upstash, Stripe, Sentry, PostHog, Axiom) is collected and kept on file to answer customer security questionnaires. Customers get a data processing addendum and a sub-processor list. The SOC 2 audit for us waits until firms ask for it; the controls start on day one (below). The same page serves HR teams, law firms and universities as plain descriptions of the controls; we make no claims about rules specific to them (for example FERPA, HIPAA or bar association guidance).
 
 **SOC 2 readiness.** DocuLink runs SOC 2-style controls from the first commit, so an audit can start whenever a customer asks for a report, without rebuilding anything. Engineering controls are specified in SPEC-foundation.
 
 Engineering controls, from day one:
-- **Change management.** All code reaches `main` through a pull request with passing CI and an approval from someone other than the author. Production deploys only from the Release workflow.
+- **Change management.** All code reaches `main` through a pull request with passing CI. While there's one engineer, the owner signs off each week's merged changes; from the second engineer on, every pull request needs an approval from someone other than the author. Production deploys only from the Release workflow.
 - **Vulnerability management.** Dependabot, `pnpm audit`, CodeQL, secret scanning and Terraform policy checks in CI. Critical findings fixed within 7 days, high within 30.
-- **Logging and monitoring.** Application logs kept for one year in a log store, CloudTrail for at least one year, Sentry alerts and uptime monitors.
+- **Logging and monitoring.** Application logs in Axiom, kept for one year from the closed beta, CloudTrail for at least one year, Sentry alerts and uptime monitors.
 - **Staff access.** AWS through IAM Identity Center with MFA and role-based permission sets, no IAM users. Every vendor account is a named company account with MFA enforced, with SSO where the plan allows. No shared logins.
 - **Production data.** Staff don't open customer documents, and the app has no staff path to them. Production database reads use a read-only role, only for incidents or a customer's support request, and each one is recorded. Production data is never copied to staging, previews or laptops.
 - **Incident response.** A written runbook with severity levels and customer notification, so customers can meet their own deadlines (for example the FTC Safeguards Rule's 30-day notice for events affecting 500 or more consumers).
@@ -1105,7 +1105,7 @@ Estimates assume one full-time developer, starting October 26, 2026. As the team
 **Milestone 1: Foundation (week 1, Oct 26 to Nov 1)**
 - AWS: production and staging accounts; Terraform stack for the S3 bucket (SSE-KMS, Block Public Access, TLS-only policy, versioning, lifecycle rules, CORS), KMS key, IAM role with Vercel OIDC trust, SES identity and configuration set, GuardDuty Malware Protection plan, EventBridge rules and API destination, CloudTrail.
 - **Request SES production access on day 1** (approval can take a few days) and set up SPF, DKIM, DMARC on `mail.doculinkapp.com`. Developers use a sandbox role in the staging account for local S3 and SES.
-- SOC 2 readiness (10): GitHub organization with branch protection and required review, Dependabot and CodeQL, log drain with one-year retention, AWS IAM Identity Center with MFA, MFA enforced on every vendor account, the production data access rule written down.
+- SOC 2 readiness (10): GitHub organization with branch protection and required checks, Dependabot and CodeQL, Axiom connected to Vercel, AWS IAM Identity Center with MFA, MFA enforced on every vendor account, the production data access rule written down.
 - Provision Neon (`aws-us-east-1`, PITR on), Upstash Redis and QStash, Sentry, PostHog, Vercel Pro project pinned to `iad1`, Stripe with Tax enabled.
 - Next.js app, Tailwind, design tokens (5.4), base components (button, input, badge, sheet, toast).
 - Drizzle schema and first migration, including workspaces and the append-only trigger.
@@ -1165,8 +1165,8 @@ Estimates assume one full-time developer, starting October 26, 2026. As the team
 - [ ] An upload whose bytes don't match the signed checksum is rejected by S3 and shown as a failed upload.
 - [ ] An invite sent to the SES bounce simulator address flags the request as "Invite bounced" within 5 minutes, pauses reminders and emails the requester; fixing the email sends a new invite with a new link.
 - [ ] No AWS access keys exist in Vercel or the repository; the app works with OIDC credentials only.
-- [ ] `main` is protected: merging needs passing CI and an approval from someone other than the author; CodeQL, dependency and secret scanning run on every pull request.
-- [ ] Production logs reach the log store and are kept for one year; no IAM users exist in either AWS account.
+- [ ] `main` is protected: merging needs passing CI (and, once there are two engineers, an approval from someone other than the author); CodeQL, dependency and secret scanning run on every pull request.
+- [ ] Production logs reach Axiom with 12-month retention; no IAM users exist in either AWS account.
 - [ ] Checkout charges the right sales tax for a test address in a taxable state, for both monthly and annual prices.
 - [ ] A lapsed subscription blocks sending new requests but not client uploads, review or download.
 - [ ] Every status and badge is understandable without color.
@@ -1187,7 +1187,7 @@ Estimates assume one full-time developer, starting October 26, 2026. As the team
 | Scan delays block the requester | Scans usually finish in seconds; "Scanning..." state in the UI; stuck-scan check in daily maintenance plus a Sentry alert |
 | ZIP timeouts on very large packages | Background export above 200 MB, store mode, 500 MB request cap, `maxDuration = 300`; fall back to per-item downloads if a ZIP fails; move the job to Lambda if needed |
 | iOS camera and HEIC quirks | Test matrix in milestone 5; conversion failure falls back to uploading the original HEIC (preview shows "Download to view") |
-| Vendor sprawl (Vercel, Neon, AWS, Upstash, Stripe, Sentry, PostHog, Cloudflare Turnstile) for a small team | All have free or low tiers suitable for beta; AWS pieces in one IaC stack; one status dashboard and Sentry alerts for job failures; every vendor's SOC 2 report on file for customer questionnaires; app and data portable per section 6.3 |
+| Vendor sprawl (Vercel, Neon, AWS, Upstash, Stripe, Sentry, PostHog, Axiom, Cloudflare Turnstile) for a solo developer, then a small team | All have free or low tiers suitable for beta; AWS pieces in one IaC stack; one status dashboard and Sentry alerts for job failures; every vendor's SOC 2 report on file for customer questionnaires; app and data portable per section 6.3 |
 | A firm asks for our SOC 2 report | Controls and evidence run from day one (10), so a Type II window can start at once; Type I first if the firm needs something sooner. Choose the platform and auditor when the first firm asks |
 | Firms need team access sooner than planned | Workspace-owned data model from day one; Team plan is the first post-launch feature |
 

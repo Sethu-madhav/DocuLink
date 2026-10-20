@@ -330,14 +330,14 @@ Provisioning checklist (not Terraform, recorded in `infra/README.md`):
 
 ## SOC 2 readiness controls (MVP.md 10)
 
-These run from the first commit, so their evidence exists whenever an audit starts. They're written for a team, not one person. Where evidence is a document, it lives in `docs/compliance/` (the control list and where each control's evidence is) and `docs/ops/` (runbooks).
+These run from the first commit, so their evidence exists whenever an audit starts. They work for a solo developer today and switch to team rules with one setting when the second engineer joins. Where evidence is a document, it lives in `docs/compliance/` (the control list and where each control's evidence is) and `docs/ops/` (runbooks).
 
 | Control | How | Evidence |
 |---|---|---|
-| Change management | GitHub organization. `main` is protected: pull request required; 1 approval from a code owner who isn't the author; stale approvals dismissed on new commits; required checks `ci`, `codeql`, `gitleaks`, `terraform`; no force pushes or deletion; rules apply to admins. Production deploys only from the Release workflow | PR history, branch protection settings export (quarterly) |
-| Emergency changes | An admin may bypass review only for a production incident. The PR is labeled `emergency` and gets a review within 2 business days | PRs with the label, each with a later approving review |
+| Change management | GitHub organization. `main` is protected: pull request required; required checks `ci`, `codeql`, `gitleaks`, `terraform`; no force pushes or deletion; rules apply to admins. Production deploys only from the Release workflow. **While there's one engineer**, GitHub can't require an approval (authors can't approve their own PRs), so each PR uses the template checklist (what changed, how it was tested, security impact) and the owner signs off the week's merged PRs in `docs/compliance/change-reviews/{yyyy-ww}.md`. **When a second engineer joins**, turn on "1 approval from a code owner who isn't the author" and "dismiss stale approvals"; the weekly sign-off then stops | PR history; weekly sign-offs; branch protection settings export (quarterly) |
+| Emergency changes | An admin may bypass the required checks only for a production incident. The PR is labeled `emergency` and is reviewed within 2 business days (in the weekly sign-off while solo) | PRs with the label, each with a later review |
 | Vulnerability management | Dependabot security updates on, weekly grouped version updates; `pnpm audit --audit-level high` in `ci`; CodeQL (JavaScript/TypeScript) on every PR and weekly; `gitleaks`; `checkov` and `tflint` on `infra/`. Fix critical findings within 7 days and high within 30 | Dependabot and CodeQL alert history, with close dates |
-| Application logs | Vercel log drain to the log store (Open Question 1), kept for 1 year. Logs are JSON with a request id and follow the same scrubbing rules as Sentry: no document contents, file names, tokens or client emails | Log store retention setting; a sample query |
+| Application logs | Axiom through its Vercel integration. Free Personal plan (30-day retention) during the build; Axiom Cloud with 12-month retention from the closed beta in mid-December, when real client data arrives. Logs are JSON with a request id and follow the same scrubbing rules as Sentry: no document contents, file names, tokens or client emails | Log store retention setting; a sample query |
 | Infrastructure logs | CloudTrail (management and S3 data events) in a separate locked bucket, kept 1 year, with Object Lock | Terraform; bucket lifecycle |
 | Monitoring and alerting | Sentry issue alerts and Cron monitors (existing); Sentry Uptime monitors on `/api/health`, `/sign-in` and an invalid portal link, every minute; AWS alarms (existing). Alerts go to the on-call channel | Alert rules; incident log |
 | Staff access to AWS | IAM Identity Center with MFA required. Permission sets: `ReadOnly` (both accounts), `Developer` (staging only), `ProductionAdmin` (production, 1-hour sessions). No IAM users; `pnpm infra:check-users` fails if any exist | Identity Center assignments; CloudTrail sign-ins |
@@ -449,7 +449,7 @@ MVP.md 14 acceptance criteria owned here:
   - disabling the append-only trigger outside account deletion
   - wildcard IAM actions or resources
   - running `infra:apply` against production from a laptop
-  - merging to `main` without review, except a labeled emergency change
+  - merging to `main` without passing checks (or, once there are two engineers, without review), except a labeled emergency change
   - copying production data out of production, or reading it without a `prod-access` record
   - shared logins or IAM users
 
@@ -464,8 +464,8 @@ MVP.md 14 acceptance criteria owned here:
 - [ ] Security headers and the CSP are present on staging (E2E), with no CSP violations reported on sign-in and portal pages.
 - [ ] Sentry receives a test error from the server and the browser with scrubbed fields. PostHog receives a typed test event.
 - [ ] SES production access has been requested (day 1), and SPF, DKIM and DMARC records verify.
-- [ ] Branch protection, CODEOWNERS, Dependabot and CodeQL are on, and a test PR without approval can't merge.
-- [ ] Production logs arrive in the log store with 1-year retention. Sentry Uptime monitors are green.
+- [ ] Branch protection, CODEOWNERS, Dependabot and CodeQL are on, and a test PR with a failing check can't merge.
+- [ ] Production logs arrive in Axiom (12-month retention from the beta). Sentry Uptime monitors are green.
 - [ ] Staff reach AWS only through IAM Identity Center with MFA, and `infra:check-users` passes in both accounts.
 - [ ] `docs/compliance/` and `docs/ops/` hold the control list, the incident response runbook and the access review template.
 
@@ -483,10 +483,9 @@ MVP.md 14 acceptance criteria owned here:
 1. **Infrastructure as code:** Terraform.
 2. **Domain:** `doculinkapp.com`, with email from `mail.doculinkapp.com`.
 3. **Local AWS:** developers use a sandbox role in the staging account (AWS SSO) for S3 and SES. No LocalStack.
-4. **SOC 2:** build the controls from day one, for a team; the audit comes later (MVP.md 0 row 46).
+4. **SOC 2:** build the controls from day one; the audit comes later (MVP.md 0 row 46). While solo, a weekly sign-off stands in for a second reviewer.
+5. **Log store:** Axiom. Free during the build; Axiom Cloud ($25 a month platform fee plus usage, per its pricing page) with 12-month retention from the beta. It has a native Vercel integration and its own SOC 2 Type II report. Chosen over our own AWS setup because it's about an hour of work instead of about 2 days, and the 7-week plan has no slack.
 
 ## Open Questions
 
-1. **Log store.** Application logs need a store that keeps them for a year, which is a new vendor or new AWS work. Options:
-   - (a) Axiom through Vercel's log drain integration: about an hour to set up, and it has its own SOC 2 report. Recommended.
-   - (b) Our own AWS account (a drain endpoint writing to S3, queried with Athena): no new vendor, about 2 days of Terraform and code.
+None.
